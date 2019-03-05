@@ -3,7 +3,7 @@ package vo;
 import lombok.Data;
 
 /**
- * login VO
+ * login方法 VO
  * <br>
  * created on 2019/03/04
  *
