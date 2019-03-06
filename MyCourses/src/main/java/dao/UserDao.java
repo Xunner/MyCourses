@@ -4,8 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import po.UserPO;
 
-import java.util.ArrayList;
-
 /**
  * 用户Dao
  * <br>
@@ -15,7 +13,7 @@ import java.util.ArrayList;
  **/
 @Repository
 public interface UserDao extends JpaRepository<UserPO, Long> {
-	UserPO findById(Long id);
+	boolean existsByEmailAndPasswordAndDeletedFalse(String email, String password);
 
-	ArrayList<UserPO> findAllByNameOrStudentIdOrEmail(String name, String studentId, String email);
+	boolean existsByEmailAndDeletedFalse(String email);
 }

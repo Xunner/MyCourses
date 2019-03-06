@@ -11,6 +11,6 @@ import lombok.Data;
  **/
 @Data
 public class LogInVO {
-	public String username;
+	public String email;
 	public String password;
 }

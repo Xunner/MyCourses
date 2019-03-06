@@ -10,7 +10,9 @@ import enums.Result;
  * @author 巽
  **/
 public interface UserService {
-	Result login(String username, String password);
+	Result login(String email, String password);
 
-	Result register(String name, String password, String studentId, String email);
+	Result registerStudent(String email, String name, String password, String studentId);
+
+	Result registerTeacher(String email, String name, String password);
 }

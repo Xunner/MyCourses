@@ -19,19 +19,8 @@
 	<!--静态资源映射-->
 	<!--本项目把静态资源放在了webapp的statics目录下，资源映射如下-->
 	<mvc:resources mapping="/static/**" location="static/"/>
-	<!--<mvc:resources mapping="/js/**" location="/WEB-INF/static/js/"/>-->
-	<!--<mvc:resources mapping="/image/**" location="/WEB-INF/static/image/"/>-->
-	<!--&lt;!&ndash;不拦截欢迎页&ndash;&gt;-->
+	<!--不拦截欢迎页-->
 	<mvc:resources mapping="/index.html" location="/"/>
-
-	<!-- 对模型视图名称的解析，即在模型视图名称添加前后缀(如果最后一个还是表示文件夹,则最后的斜杠不要漏了) 使用JSP-->
-	<!-- 默认的视图解析器 在上边的解析错误时使用 (默认使用html)- -->
-	<!--<bean id="defaultViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">-->
-		<!--<property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>-->
-		<!--<property name="prefix" value="/WEB-INF/views/"/>&lt;!&ndash;设置JSP文件的目录位置&ndash;&gt;-->
-		<!--<property name="suffix" value=".jsp"/>-->
-		<!--<property name="exposeContextBeansAsAttributes" value="true"/>-->
-	<!--</bean>-->
 
 	<!-- 自动扫描装配 -->
 	<context:component-scan base-package="controller,service,dao"/>
