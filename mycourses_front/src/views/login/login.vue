@@ -4,25 +4,51 @@
       <img src="../../assets/logo.png">
     </el-header>
     <el-main>
-      <div class="login-wrap" v-show="showLogin">
+      <el-form class="login-wrap" :model="logInForm" :rules="logInRules" ref="logInForm" v-show="showLogin">
         <h3>登录</h3>
-        <el-input class="input" type="text" placeholder="用户名" v-model="username"></el-input>
-        <el-input class="input" type="input password" placeholder="密码" v-model="password"></el-input>
         <p class="prompt" v-show="showPrompt">{{prompt}}</p>
-        <el-button class="button" type="primary" v-on:click="login">登录</el-button>
+        <el-form-item prop="email">
+          <el-input class="input" type="text" placeholder="NJU邮箱" v-model="logInForm.email"></el-input>
+        </el-form-item>
+        <el-form-item prop="password">
+          <el-input class="input" type="input password" placeholder="密码" v-model="logInForm.password"></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button class="button" type="primary" @click="login('logInForm')">登录</el-button>
+        </el-form-item>
         <span class="span" v-on:click="toRegister">没有账号？马上注册</span>
-      </div>
+      </el-form>
 
-      <div class="register-wrap" v-show="showRegister">
+      <el-form class="register-wrap" :model="registerForm" :rules="registerRules" ref="registerForm" label-width="100px"
+               v-show="showRegister">
         <h3>注册</h3>
-        <el-input class="input" type="text" placeholder="NJU邮箱" v-model="email"></el-input>
-        <el-input class="input" type="text" placeholder="姓名" v-model="newUsername"></el-input>
-        <el-input class="input" type="password" placeholder="密码" v-model="newPassword"></el-input>
-        <el-input class="input" type="password" placeholder="确认密码" v-model="newPasswordConfirm"></el-input>
         <p class="prompt" v-show="showPrompt">{{prompt}}</p>
-        <el-button class="button" type="primary" v-on:click="register">注册</el-button>
+        <el-form-item label="邮箱" prop="email">
+          <el-input class="input" type="text" placeholder="必须为NJU邮箱" v-model="registerForm.email"></el-input>
+        </el-form-item>
+        <el-form-item label="姓名" prop="newName">
+          <el-input class="input" type="text" v-model="registerForm.newName"></el-input>
+        </el-form-item>
+        <el-form-item label="学号" prop="studentId">
+          <el-input class="input" type="text" v-model="registerForm.studentId"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input class="input" type="password" v-model="registerForm.password"></el-input>
+        </el-form-item>
+        <el-form-item label="确认密码" prop="checkPassword">
+          <el-input class="input" type="password" v-model="registerForm.checkPassword"></el-input>
+        </el-form-item>
+        <el-form-item label="身份" prop="userType">
+          <el-radio-group v-model="registerForm.userType">
+            <el-radio-button label="1">学生</el-radio-button>
+            <el-radio-button label="2">教师</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item>
+          <el-button class="button" type="primary" v-on:click="register('registerForm')">注册</el-button>
+        </el-form-item>
         <span class="span" v-on:click="toLogin">已有账号？马上登录</span>
-      </div>
+      </el-form>
     </el-main>
   </el-container>
 </template>
@@ -33,61 +59,70 @@ import {setCookie, getCookie} from '../../assets/js/cookie'
 export default {
   name: 'login',
   mounted () {
-    if (getCookie('username')) {
+    if (getCookie('email')) {
       this.$router.push('/')
     }
   },
   methods: {
-    login () {
-      if (this.username === '' || this.password === '') {
-        alert('请输入用户名或密码')
-      } else {
-        let data = {'username': this.username, 'password': this.password}
-        /* 接口请求 */
-        this.$http.post('/MyCourses/login', data).then((res) => {
-          console.log(res)
-          /* 接口的传值是(-1,该用户不存在),(0,密码错误)，同时还会检测管理员账号的值 */
-          if (res.data === -1) {
-            this.prompt = '该用户不存在'
-            this.showPrompt = true
-          } else if (res.data === 0) {
-            this.prompt = '密码输入错误'
-            this.showPrompt = true
-          } else if (res.data === 'admin') {
-            /* 路由跳转this.$router.push */
-            this.$router.push('/main')
-          } else {
-            this.prompt = '登录成功'
-            this.showPrompt = true
-            setCookie('username', this.username, 1000 * 60)
-            setTimeout(function () {
-              this.$router.push('/')
-            }.bind(this), 1000)
-          }
-        })
-      }
+    login (formName) {
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          let data = {'email': this.logInForm.email, 'password': this.logInForm.password}
+          /* HTTP请求 */
+          this.$http.post('/MyCourses/login', data).then((res) => {
+            console.log(res)
+            if (res.data === 'NOT_EXIST') {
+              this.prompt = '该用户不存在或密码输入错误'
+              this.showPrompt = true
+            } else if (res.data === 'SUCCESS') {
+              this.prompt = '登录成功'
+              this.showPrompt = true
+              setCookie('email', this.logInForm.email, 1000 * 60)
+              setTimeout(function () {
+                this.$router.push('/')
+              }.bind(this), 1000)
+            } else {
+              console.log('未知错误：' + res.data)
+            }
+          })
+        } else {
+          return false
+        }
+      })
     },
-    register () {
-      if (this.newUsername === '' || this.newPassword === '') {
-        alert('请输入用户名或密码')
-      } else {
-        let data = {'username': this.newUsername, 'password': this.newPassword}
-        this.$http.post('/MyCourses/register', data).then((res) => {
-          console.log(res)
-          if (res.data === 'ok') {
-            this.prompt = '注册成功'
-            this.showPrompt = true
-            this.username = ''
-            this.password = ''
-            /* 注册成功之后再跳回登录页 */
-            setTimeout(function () {
-              this.showRegister = false
-              this.showLogin = true
-              this.showPrompt = false
-            }.bind(this), 1000)
+    register (formName) {
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          let data = {
+            'userType': this.registerForm.userType,
+            'email': this.registerForm.email,
+            'name': this.registerForm.newName,
+            'password': this.registerForm.password,
+            'studentId': this.registerForm.studentId
           }
-        })
-      }
+          this.$http.post('/MyCourses/register', data).then((res) => {
+            if (res.data === 'EXIST') {
+              this.prompt = '该邮箱已被注册'
+              this.showPrompt = true
+            } else if (res.data === 'SUCCESS') {
+              this.prompt = '注册成功'
+              this.showPrompt = true
+              // ↓this可能出事！
+              this.$refs[formName].resetFields()
+              /* 注册成功之后再跳回登录页 */
+              setTimeout(function () {
+                this.showRegister = false
+                this.showLogin = true
+                this.showPrompt = false
+              }.bind(this), 1000)
+            } else {
+              console.log('未知错误：' + res.data)
+            }
+          })
+        } else {
+          return false
+        }
+      })
     },
     toRegister () {
       this.prompt = ''
@@ -101,17 +136,48 @@ export default {
     }
   },
   data () {
+    let validatePassword = (rule, value, callback) => {
+      if (this.registerForm.checkPassword !== '') {
+        this.$refs.ruleForm2.validateField('checkPassword')
+      }
+      callback()
+    }
+    let validateCheckPassword = (rule, value, callback) => {
+      if (value !== this.registerForm.password) {
+        callback(new Error('两次输入密码不一致!'))
+      } else {
+        callback()
+      }
+    }
     return {
       showLogin: true,
       showRegister: false,
       showPrompt: false,
       prompt: '',
-      username: '',
-      password: '',
-      email: '',
-      newUsername: '',
-      newPassword: '',
-      newPasswordConfirm: ''
+      logInForm: {
+        email: '',
+        password: ''
+      },
+      logInRules: {
+        email: [{required: true, message: '请输入完整NJU邮箱', trigger: 'blur'}],
+        password: [{required: true, message: '请输入密码', trigger: 'blur'}]
+      },
+      registerForm: {
+        email: '',
+        newName: '',
+        password: '',
+        checkPassword: '',
+        userType: '1',
+        studentId: ''
+      },
+      registerRules: {
+        email: [{required: true, message: '请输入完整NJU邮箱', trigger: 'blur'}],
+        password: [{required: true, message: '请输入密码', trigger: 'blur'},
+          {validator: validatePassword, trigger: 'blur'}],
+        checkPassword: [{required: true, message: '请再次输入密码', trigger: 'blur'},
+          {validator: validateCheckPassword, trigger: 'blur'}],
+        userType: [{required: true, message: '请选择您的身份', trigger: 'blur'}]
+      }
     }
   }
 }
@@ -128,14 +194,11 @@ export default {
     margin:0 auto;
     width: 250px;
   }
-  .input {
-    margin-bottom: 15px;
-  }
   .prompt {
     color: red;
   }
   .button {
-    width: 250px;
+    width: 200px;
     margin-bottom: 15px;
   }
   .span {

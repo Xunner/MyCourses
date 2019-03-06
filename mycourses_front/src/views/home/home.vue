@@ -1,5 +1,10 @@
 <template>
   <el-container>
+    <el-header>
+      <el-menu :default-active="activeIndex" class="" mode="horizontal" @select="handleSelect">
+
+      </el-menu>
+    </el-header>
   </el-container>
 </template>
 
