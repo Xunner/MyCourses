@@ -3,10 +3,7 @@ package controller;
 import enums.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import service.UserService;
 import vo.LogInVO;
 import vo.RegisterVO;
@@ -38,14 +35,33 @@ public class MainController {
 	@RequestMapping(value = "/register", method = RequestMethod.POST)
 	public String register(@RequestBody RegisterVO registerVO) {
 		System.out.println(registerVO);
-		switch (registerVO.type) {
-			case 0:
+		switch (registerVO.userType) {
+			case "student":
 				return userService.registerStudent(registerVO.email, registerVO.name, registerVO.password, registerVO.studentId).name();
-			case 1:
+			case "teacher":
 				return userService.registerTeacher(registerVO.email, registerVO.name, registerVO.password).name();
 			default:
-				System.out.println("错误：未知用户类型 " + registerVO.type);
+				System.out.println("错误：未知用户类型 " + registerVO.userType);
 		}
 		return Result.FAILED.name();
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/activate/{code}", method = RequestMethod.GET)
+	public String activate(@PathVariable("code") String code) {
+		String result;
+		switch (userService.activateAccount(code)) {
+			case SUCCESS:
+				result = "Activate account successfully!";
+				break;
+			case NOT_EXIST:
+				result = "Activation failed and the link has expired.";
+				break;
+			default:
+				result = "Something is wrong...";
+				System.out.println("未知错误：" + code);
+		}
+		return "<html><head></head><body><h1>" + result + "<br>Click on the link below to jump to our website:" +
+				"</h1><h3><a href='http://localhost:8080/MyCourses/'>http://localhost:8080/MyCourses/</a></h3></body></html>";
 	}
 }

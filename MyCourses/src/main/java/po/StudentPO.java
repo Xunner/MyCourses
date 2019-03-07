@@ -1,5 +1,6 @@
 package po;
 
+import enums.StudentType;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -21,6 +22,10 @@ public class StudentPO extends UserPO {
 	@Column(name = "student_id")
 	private String studentId;
 
+	@Enumerated
+	@Column(name = "student_type")
+	private StudentType studentType;
+
 	/** 学生参加的所有班级 */
 	@ManyToMany(fetch = FetchType.EAGER)
 	private List<ClassPO> classes;
@@ -28,8 +33,9 @@ public class StudentPO extends UserPO {
 	public StudentPO() {
 	}
 
-	public StudentPO(String email, String name, String password, boolean deleted, String studentId) {
+	public StudentPO(String email, String name, String password, boolean deleted, String studentId, StudentType studentType) {
 		super(email, name, password, deleted);
 		this.studentId = studentId;
+		this.studentType = studentType;
 	}
 }

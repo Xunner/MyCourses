@@ -15,4 +15,6 @@ public interface UserService {
 	Result registerStudent(String email, String name, String password, String studentId);
 
 	Result registerTeacher(String email, String name, String password);
+
+	Result activateAccount(String activationCode);
 }

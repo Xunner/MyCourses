@@ -11,8 +11,8 @@ import lombok.Data;
  **/
 @Data
 public class RegisterVO {
-	/** 0: Student, 1: Teacher */
-	public int type;
+	/** "学生": student, "教师": teacher */
+	public String userType;
 	public String email;
 	public String name;
 	public String password;
