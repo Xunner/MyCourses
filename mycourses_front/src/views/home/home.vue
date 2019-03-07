@@ -9,9 +9,6 @@
 </template>
 
 <script>
-/* 引入公共方法 */
-import {getCookie, deleteCookie} from '../../assets/js/cookie.js'
-
 export default {
   data () {
     return {
@@ -20,17 +17,18 @@ export default {
   },
   mounted () {
     /* 页面挂载获取保存的cookie值，渲染到页面上 */
-    let userName = getCookie('username')
-    this.name = userName
-    /* 如果cookie不存在，则跳转到登录页 */
-    if (userName === '') {
+    if (this.$cookies.isKey('email')) {
+      this.name = this.$cookies.get('email')
+    } else {
+      /* 如果cookie不存在，则跳转到登录页 */
       this.$router.push('/login')
     }
   },
   methods: {
-    quit () {
-      /* 删除cookie */
-      deleteCookie('username')
+    logout () {
+      /* 退出登录 */
+      this.$cookies.remove('username')
+      this.$router.push('/login')
     }
   }
 }

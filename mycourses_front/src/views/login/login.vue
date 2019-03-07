@@ -11,7 +11,7 @@
           <el-input class="input" type="text" placeholder="NJU邮箱" v-model="logInForm.email"></el-input>
         </el-form-item>
         <el-form-item prop="password">
-          <el-input class="input" type="input password" placeholder="密码" v-model="logInForm.password"></el-input>
+          <el-input class="input" type="password" placeholder="密码" v-model="logInForm.password"></el-input>
         </el-form-item>
         <el-form-item>
           <el-button class="button" type="primary" @click="login('logInForm')">登录</el-button>
@@ -40,12 +40,12 @@
         </el-form-item>
         <el-form-item label="身份" prop="userType">
           <el-radio-group v-model="registerForm.userType">
-            <el-radio-button label="1">学生</el-radio-button>
-            <el-radio-button label="2">教师</el-radio-button>
+            <el-radio-button label="student">学生</el-radio-button>
+            <el-radio-button label="teacher">教师</el-radio-button>
           </el-radio-group>
         </el-form-item>
         <el-form-item>
-          <el-button class="button" type="primary" v-on:click="register('registerForm')">注册</el-button>
+          <el-button class="button" type="primary" @click="register('registerForm')">注册</el-button>
         </el-form-item>
         <span class="span" v-on:click="toLogin">已有账号？马上登录</span>
       </el-form>
@@ -54,12 +54,10 @@
 </template>
 
 <script>
-import {setCookie, getCookie} from '../../assets/js/cookie'
-
 export default {
   name: 'login',
   mounted () {
-    if (getCookie('email')) {
+    if (this.$cookies.isKey('email')) {
       this.$router.push('/')
     }
   },
@@ -71,18 +69,19 @@ export default {
           /* HTTP请求 */
           this.$http.post('/MyCourses/login', data).then((res) => {
             console.log(res)
-            if (res.data === 'NOT_EXIST') {
+            console.log(res.bodyText)
+            if (res.bodyText === 'NOT_EXIST') {
               this.prompt = '该用户不存在或密码输入错误'
               this.showPrompt = true
-            } else if (res.data === 'SUCCESS') {
+            } else if (res.bodyText === 'SUCCESS') {
               this.prompt = '登录成功'
               this.showPrompt = true
-              setCookie('email', this.logInForm.email, 1000 * 60)
-              setTimeout(function () {
-                this.$router.push('/')
-              }.bind(this), 1000)
+              this.$cookies.set('email', this.logInForm.email, '1m')
+              this.$router.push('/')
             } else {
-              console.log('未知错误：' + res.data)
+              this.prompt = '网络错误，请刷新或稍后再试'
+              this.showPrompt = true
+              console.log('未知错误：' + res.bodyText)
             }
           })
         } else {
@@ -101,22 +100,22 @@ export default {
             'studentId': this.registerForm.studentId
           }
           this.$http.post('/MyCourses/register', data).then((res) => {
-            if (res.data === 'EXIST') {
+            if (res.bodyText === 'EXIST') {
               this.prompt = '该邮箱已被注册'
               this.showPrompt = true
-            } else if (res.data === 'SUCCESS') {
+            } else if (res.bodyText === 'SUCCESS') {
               this.prompt = '注册成功'
               this.showPrompt = true
               // ↓this可能出事！
               this.$refs[formName].resetFields()
               /* 注册成功之后再跳回登录页 */
-              setTimeout(function () {
-                this.showRegister = false
-                this.showLogin = true
-                this.showPrompt = false
-              }.bind(this), 1000)
+              this.showRegister = false
+              this.showLogin = true
+              this.showPrompt = false
             } else {
-              console.log('未知错误：' + res.data)
+              this.prompt = '网络错误，请刷新或稍后再试'
+              this.showPrompt = true
+              console.log('未知错误：' + res.bodyText)
             }
           })
         } else {
@@ -136,9 +135,16 @@ export default {
     }
   },
   data () {
+    let validateEmail = (rule, value, callback) => {
+      if (this.registerForm.email.match(/^[a-zA-Z0-9]+@smail.nju.edu.cn$/)) {
+        callback()
+      } else {
+        callback(new Error('邮箱格式不符!'))
+      }
+    }
     let validatePassword = (rule, value, callback) => {
       if (this.registerForm.checkPassword !== '') {
-        this.$refs.ruleForm2.validateField('checkPassword')
+        this.$refs.registerForm.validateField('checkPassword')
       }
       callback()
     }
@@ -167,11 +173,12 @@ export default {
         newName: '',
         password: '',
         checkPassword: '',
-        userType: '1',
+        userType: 'student',
         studentId: ''
       },
       registerRules: {
-        email: [{required: true, message: '请输入完整NJU邮箱', trigger: 'blur'}],
+        email: [{required: true, message: '请输入完整NJU邮箱', trigger: 'blur'},
+          {validator: validateEmail, trigger: 'blur'}],
         password: [{required: true, message: '请输入密码', trigger: 'blur'},
           {validator: validatePassword, trigger: 'blur'}],
         checkPassword: [{required: true, message: '请再次输入密码', trigger: 'blur'},
