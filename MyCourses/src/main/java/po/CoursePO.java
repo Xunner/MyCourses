@@ -23,4 +23,16 @@ public class CoursePO {
 	private Long teacherId;
 
 	private String name;
+
+	/** 本课属于几年级的课程，默认从1开始 */
+	private Integer grade;
+
+	public CoursePO() {
+	}
+
+	public CoursePO(Long teacherId, String name, Integer grade) {
+		this.teacherId = teacherId;
+		this.name = name;
+		this.grade = grade;
+	}
 }

@@ -34,7 +34,21 @@ public class ClassPO {
 	@Column(name = "class_order")
 	private Integer classOrder;
 
+	/** 第几学期的班次，默认从1开始 */
+	@Column(name = "class_order")
+	private Integer term;
+
 	/** 本班所有学生 */
 	@ManyToMany(mappedBy = "classes")
 	private List<StudentPO> students;
+
+	public ClassPO() {
+	}
+
+	public ClassPO(LocalDateTime startTime, LocalDateTime endTime, Integer classOrder, Integer term) {
+		this.startTime = startTime;
+		this.endTime = endTime;
+		this.classOrder = classOrder;
+		this.term = term;
+	}
 }

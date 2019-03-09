@@ -20,15 +20,30 @@ public class MessagePO {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	private Long sender;
+	@Column(name = "sender_id")
+	private Long senderId;
 
 	@Column(name = "receiver_id")
 	private Long receiverId;
 
 	private LocalDateTime time;
 
+	private String title;
+
 	private String message;
 
 	/** 是否未读 */
 	private boolean unread;
+
+	public MessagePO() {
+	}
+
+	public MessagePO(Long senderId, Long receiverId, LocalDateTime time, String title, String message, boolean unread) {
+		this.senderId = senderId;
+		this.receiverId = receiverId;
+		this.time = time;
+		this.title = title;
+		this.message = message;
+		this.unread = unread;
+	}
 }

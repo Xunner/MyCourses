@@ -10,7 +10,7 @@ import enums.Result;
  * @author 巽
  **/
 public interface CourseService {
-	Result createCourse(String teacherId, String name);
+	Result createCourse(Long teacherId, String name, Integer grade);
 
 	/**
 	 * TODO

@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import po.MessagePO;
 
+import java.util.List;
+
 /**
  * 消息Dao
  * <br>
@@ -13,4 +15,5 @@ import po.MessagePO;
  **/
 @Repository
 public interface MessageDao extends JpaRepository<MessagePO, Long> {
+	List<MessagePO> findAllByReceiverId(Long receiverId);
 }

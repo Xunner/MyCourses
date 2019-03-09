@@ -4,12 +4,18 @@ import enums.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import po.MessagePO;
+import po.StudentPO;
 import po.UserPO;
+import service.ClassService;
+import service.CourseService;
+import service.MessageService;
 import service.UserService;
-import vo.LogInVO;
-import vo.RegisterVO;
+import vo.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -22,15 +28,21 @@ import java.util.Map;
 @Controller
 public class MainController {
 	private final UserService userService;
+	private final CourseService courseService;
+	private final ClassService classService;
+	private final MessageService messageService;
 
 	@Autowired
-	public MainController(UserService userService) {
+	public MainController(UserService userService, CourseService courseService, ClassService classService, MessageService messageService) {
 		this.userService = userService;
+		this.courseService = courseService;
+		this.classService = classService;
+		this.messageService = messageService;
 	}
 
 	@ResponseBody
 	@RequestMapping(value = "/login", method = RequestMethod.POST)
-	public Object login(@RequestBody LogInVO logInVO) {
+	public Map<String, Object> login(@RequestBody LogInVO logInVO) {
 		System.out.println(logInVO);
 		Map<String, Object> ret = new HashMap<>();
 		UserPO user = userService.login(logInVO.email, logInVO.password);
@@ -78,5 +90,31 @@ public class MainController {
 				"</h1><h3><a href='http://localhost:8080/MyCourses/'>http://localhost:8080/MyCourses/</a></h3></body></html>";
 	}
 
-
+	@ResponseBody
+	@RequestMapping(value = "/MyInformation/", method = RequestMethod.GET)
+	public MyInformationVO getMyInformation(@RequestParam("userId") Long userId, @RequestParam("userType") String userType) {
+		System.out.println("MyInformation: " + userId + ", " + userType);
+		// 准备userInfo
+		UserPO user = userService.findById(userId);
+		List<Pair> userInfo = new ArrayList<>();
+		userInfo.add(new Pair("姓名", user.getName()));
+		userInfo.add(new Pair("身份", user.getName()));
+		userInfo.add(new Pair("邮箱", user.getName()));
+		if (user instanceof StudentPO) {
+			userInfo.add(new Pair("学号", ((StudentPO) user).getStudentType().getValue()));
+		}
+		// 准备classesTaken TODO
+		List<TreeNode> classesTaken = new ArrayList<>();
+		// 准备classesQuit
+		List<TreeNode> classesQuit = new ArrayList<>();
+		// 准备scores
+		List<TreeNode> scores = new ArrayList<>();
+		// 准备messages
+		List<MessagePO> messagePOs = messageService.getAllMessagesByReceiverId(userId);
+		List<MessageVO> messages = new ArrayList<>();
+		for (MessagePO message : messagePOs) {
+			messages.add(new MessageVO(message.getId(), message.getTitle(), message.getSenderId(), message.getTime(), message.getMessage()));
+		}
+		return new MyInformationVO(userInfo, classesTaken, classesQuit, scores, messages);
+	}
 }

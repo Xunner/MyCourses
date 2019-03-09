@@ -11,6 +11,8 @@ import po.UserPO;
  * @author 巽
  **/
 public interface UserService {
+	UserPO findById(Long userId);
+
 	UserPO login(String email, String password);
 
 	Result registerStudent(String email, String name, String password, String studentId);

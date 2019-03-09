@@ -14,11 +14,9 @@ import java.util.List;
  * @author 巽
  **/
 public interface ClassService {
+	List<ClassPO> findAllByUserId(Long userId);
 
-	/**
-	 * TODO
-	 */
-	Result publishClass(Long teacherId, Long courseId, LocalDateTime startTime, LocalDateTime endTime, List<Integer> classOrders);
+	Result publishClass(Long teacherId, Long courseId, LocalDateTime startTime, LocalDateTime endTime, List<Integer> classOrders, Integer term);
 
 	Result takeClass(Long studentId, Long classId);
 
