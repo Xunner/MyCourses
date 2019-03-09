@@ -5,9 +5,12 @@ import App from './App'
 import router from './router'
 import VueResource from 'vue-resource'
 import VueCookies from 'vue-cookies'
+import StudentNav from './components/StudentNav'
 
 Vue.use(VueCookies)
 Vue.use(VueResource)
+
+Vue.component('StudentNav', StudentNav)
 
 Vue.config.productionTip = false
 

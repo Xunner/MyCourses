@@ -4,19 +4,18 @@
       <student-nav></student-nav>
     </el-header>
     <el-main>
-      <!--TODO-->
+      <el-row>
+        <el-col :span="24"><div class="grid-content bg-purple-dark">TakeClasses</div></el-col>
+      </el-row>
     </el-main>
   </el-container>
 </template>
 
 <script>
 export default {
-  data () {
-    return {
-      name: 'tourist'
-    }
-  },
+  name: 'TakeClasses',
   mounted () {
+    // TODO
     // if (this.$cookies.isKey('userId')) {
     /* HTTP请求 */
     this.$http.get('/MyCourses/home', {
@@ -33,11 +32,10 @@ export default {
     //   /* 如果cookie不存在，则跳转到登录页 */
     //   this.$router.push('/login')
     // }
-  },
-  methods: {
   }
 }
 </script>
 
 <style scoped>
+
 </style>
