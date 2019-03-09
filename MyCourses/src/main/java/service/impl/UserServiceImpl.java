@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import po.StudentPO;
 import po.TeacherPO;
+import po.UserPO;
 import service.UserService;
 import util.MailUtil;
 
@@ -44,11 +45,8 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public Result login(String email, String password) {
-		if (userDao.existsByEmailAndPasswordAndDeletedFalse(email, password)) {
-			return Result.SUCCESS;
-		}
-		return Result.NOT_EXIST;
+	public UserPO login(String email, String password) {
+		return userDao.findByEmailAndPasswordAndDeletedFalse(email, password);
 	}
 
 	@Override

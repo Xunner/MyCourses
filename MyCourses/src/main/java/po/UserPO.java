@@ -34,4 +34,8 @@ public class UserPO {
 		this.password = password;
 		this.deleted = deleted;
 	}
+
+//	public Class<? extends UserPO> getClass(){
+//
+//	}
 }

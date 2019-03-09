@@ -5,22 +5,22 @@ import lombok.Data;
 import javax.persistence.*;
 
 /**
- * 课程
+ * 课件
  * <br>
- * created on 2019/03/06
+ * created on 2019/03/08
  *
  * @author 巽
  **/
 @Data
 @Entity
-@Table(name = "course")
-public class CoursePO {
+@Table(name = "courseware")
+public class CoursewarePO {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "teacher_id")
-	private Long teacherId;
+	@Column(name = "course_id")
+	private Long courseId;
 
 	private String name;
 }

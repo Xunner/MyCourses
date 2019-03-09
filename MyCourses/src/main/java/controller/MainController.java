@@ -4,9 +4,13 @@ import enums.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import po.UserPO;
 import service.UserService;
 import vo.LogInVO;
 import vo.RegisterVO;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 主控制器
@@ -26,9 +30,18 @@ public class MainController {
 
 	@ResponseBody
 	@RequestMapping(value = "/login", method = RequestMethod.POST)
-	public String login(@RequestBody LogInVO logInVO) {
+	public Object login(@RequestBody LogInVO logInVO) {
 		System.out.println(logInVO);
-		return userService.login(logInVO.email, logInVO.password).name();
+		Map<String, Object> ret = new HashMap<>();
+		UserPO user = userService.login(logInVO.email, logInVO.password);
+		if (user == null) {
+			ret.put("result", Result.NOT_EXIST);
+		} else {
+			ret.put("result", Result.SUCCESS);
+			ret.put("userId", user.getId());
+			ret.put("userType", user.getClass());
+		}
+		return ret;
 	}
 
 	@ResponseBody
@@ -64,4 +77,6 @@ public class MainController {
 		return "<html><head></head><body><h1>" + result + "<br>Click on the link below to jump to our website:" +
 				"</h1><h3><a href='http://localhost:8080/MyCourses/'>http://localhost:8080/MyCourses/</a></h3></body></html>";
 	}
+
+
 }

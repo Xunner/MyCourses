@@ -13,7 +13,7 @@ import po.UserPO;
  **/
 @Repository
 public interface UserDao extends JpaRepository<UserPO, Long> {
-	boolean existsByEmailAndPasswordAndDeletedFalse(String email, String password);
+	UserPO findByEmailAndPasswordAndDeletedFalse(String email, String password);
 
 	boolean existsByEmailAndDeletedFalse(String email);
 }
