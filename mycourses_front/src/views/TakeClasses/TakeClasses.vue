@@ -1,7 +1,7 @@
 <template>
   <el-container>
     <el-header>
-      <student-nav></student-nav>
+      <student-nav :name="name"></student-nav>
     </el-header>
     <el-main>
       <el-row>
@@ -18,11 +18,7 @@ export default {
     // TODO
     // if (this.$cookies.isKey('userId')) {
     /* HTTP请求 */
-    this.$http.get('/MyCourses/home', {
-      'params': {
-        'userId': this.$cookies.get('userId'),
-        'userType': this.$cookies.get('userType')
-      }
+    this.$http.get('/MyCourses/TakeClasses', {'params': {'userId': this.$cookies.get('userId')}
     }).then((res) => {
       this.$message.success('success')
     }, () => {
@@ -32,6 +28,11 @@ export default {
     //   /* 如果cookie不存在，则跳转到登录页 */
     //   this.$router.push('/login')
     // }
+  },
+  data () {
+    return {
+      name: this.$cookies.get('email')
+    }
   }
 }
 </script>

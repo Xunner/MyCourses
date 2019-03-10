@@ -3,7 +3,7 @@ import Router from 'vue-router'
 // import HelloWorld from '@/components/HelloWorld'
 import LogIn from '@/views/login/login.vue'
 import Home from '@/views/home/home.vue'
-import MyCourses from '@/views/MyCourses/MyCourses.vue'
+import MyClasses from '@/views/MyClasses/MyClasses.vue'
 import TakeClasses from '@/views/TakeClasses/TakeClasses.vue'
 import MyInformation from '@/views/MyInformation/MyInformation.vue'
 import ElementUI from 'element-ui'
@@ -13,7 +13,7 @@ Vue.use(Router)
 Vue.use(ElementUI)
 
 export default new Router({
-  mode: 'history',
+  mode: 'hash',
   routes: [
     {
       path: '/',
@@ -24,9 +24,9 @@ export default new Router({
       name: 'LogIn',
       component: LogIn
     }, {
-      path: '/MyCourses',
-      name: 'MyCourses',
-      component: MyCourses
+      path: '/MyClasses',
+      name: 'MyClasses',
+      component: MyClasses
     }, {
       path: '/TakeClasses',
       name: 'TakeClasses',

@@ -69,8 +69,9 @@ export default {
             if (res.data.result === 'NOT_EXIST') {
               this.$message.error('该用户不存在或密码输入错误')
             } else if (res.data.result === 'SUCCESS') {
-              this.$cookies.set('userId', this.data.userId, '2MIN')
-              this.$cookies.set('userType', this.data.userType, '2MIN')
+              this.$cookies.set('userId', res.data.userId, '15MIN')
+              this.$cookies.set('userType', res.data.userType, '15MIN')
+              this.$cookies.set('email', data.email, '15MIN')
               this.$router.push('/')
             } else {
               this.$message.error('网络错误，请刷新或稍后再试')

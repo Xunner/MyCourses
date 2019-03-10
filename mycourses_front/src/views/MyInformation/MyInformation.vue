@@ -1,7 +1,7 @@
 <template>
   <el-container>
     <el-header>
-      <student-nav></student-nav>
+      <student-nav :name="name"></student-nav>
     </el-header>
     <el-main>
       <el-card class="box-card">
@@ -13,7 +13,9 @@
         </div>
         <div v-for="(item, i) of userInfo" :key=i class="text">
           <label>{{item.name}}:&nbsp;&nbsp;</label>
-          <el-input v-if="isEditing && (item.name === '姓名' || item.name === '学号')" v-model="editUserForm[item.name]"
+          <el-input v-if="isEditing && item.name === '姓名'" v-model="editUserForm.name"
+                    size="mini" class="input"></el-input>
+          <el-input v-else-if="isEditing && item.name === '学号'" v-model="editUserForm.studentId"
                     size="mini" class="input"></el-input>
           <span v-else>{{item.value}}</span>
         </div>
@@ -71,6 +73,13 @@ export default {
           this.classesQuit = res.data.classesQuit
           this.scores = res.data.scores
           this.messages = res.data.messages
+          res.data.userInfo.forEach(item => {
+            if (item.name === '姓名') {
+              this.editUserForm.name = item.value
+            } else if (item.name === '学号') {
+              this.editUserForm.studentId = item.value
+            }
+          })
         } else {
           this.$message.error('网络错误，请刷新或稍后再试')
         }
@@ -84,6 +93,7 @@ export default {
   },
   data () {
     return {
+      name: this.$cookies.get('email'),
       userInfo: [{name: '姓名', value: '未知'}, {name: '身份', value: '未知'}, {name: '邮箱', value: '未知'}, {name: '学号', value: '未知'}],
       activeNames: [],
       isEditing: false,
@@ -190,7 +200,7 @@ export default {
       messages: [
         {messageId: '1', title: '标题1', sender: '教师1', time: '2019-03-07 21:18:00', message: '正文'},
         {messageId: '2', title: '标题2', sender: '教师1', time: '2019-03-08 21:18:00', message: '正文2'},
-        {messageId: '3', title: '标题3', sender: '教师2', time: '2019-03-09 21:18:00', message: '正文正文正文正文正文正文正文正文正文正文正文'}
+        {messageId: '3', title: '标题3', sender: '教师2', time: '2019-03-09 21:18:00', message: '正文正文正文正文正文正文正文正文正文正文正文正文正文'}
       ]
     }
   },
@@ -207,8 +217,12 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        this.$http.post('/MyCourses/deleteAllMessage', {
-          userId: this.$cookies.get('userId')
+        let userIds = []
+        this.messages.forEach(value => {
+          userIds.push(value.messageId)
+        })
+        this.$http.post('/MyCourses/deleteMessages', {
+          userIds: userIds
         }).then((res) => {
           if (res.bodyText === 'SUCCESS') {
             this.$message.success('成功删除全部消息!')
@@ -222,34 +236,34 @@ export default {
       }).catch(() => {
       })
     },
-    updateUserInfo () {
-      this.$http.post('/MyCourses/updateUser', {
-        userId: this.$cookies.get('userId'),
-        name: this.editUserForm.name,
-        studentId: this.editUserForm.studentId
-      }).then((res) => {
-        this.userInfo.map(item => {
-          if (item.name === '姓名') {
-            item.value = res.data.name
-          } else if (item.name === '学号') {
-            item.value = res.data.studentId
-          }
-          return item
-        })
-        this.isEditing = false
-      }, () => {
-        this.$message.error('网络错误，请刷新或稍后再试')
-      })
-    },
     deleteMessage (messageId) {
-      this.$http.post('/MyCourses/deleteMessage', {
-        messageId: messageId
+      this.$http.post('/MyCourses/deleteMessages', {
+        messageIds: [messageId]
       }).then((res) => {
         if (res.bodyText === 'SUCCESS') {
           this.messages.filter(value => value.messageId === messageId)
         } else {
           this.$message.error('网络错误，请刷新或稍后再试')
         }
+      }, () => {
+        this.$message.error('网络错误，请刷新或稍后再试')
+      })
+    },
+    updateUserInfo () {
+      this.$http.post('/MyCourses/updateUserInfo', {
+        userId: this.$cookies.get('userId'),
+        name: this.editUserForm.name,
+        studentId: this.editUserForm.studentId
+      }).then((res) => {
+        this.userInfo.map(item => {
+          if (item.name === '姓名') {
+            item.value = this.editUserForm.name
+          } else if (item.name === '学号') {
+            item.value = this.editUserForm.studentId
+          }
+          return item
+        })
+        this.isEditing = false
       }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
       })

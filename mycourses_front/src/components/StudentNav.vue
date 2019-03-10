@@ -16,28 +16,28 @@
 <script>
 export default {
   name: 'StudentNav',
+  props: {
+    name: String
+  },
   data () {
     return {
-      name: '游客',
       navList: [
-        {name: '/MyCourses', navItem: '我的课程'},
+        {name: '/MyClasses', navItem: '我的课程'},
         {name: '/TakeClasses', navItem: '选课'},
         {name: '/MyInformation', navItem: '个人信息'}
-      ],
-      userInfo: [
-        {name: '名字', value: '未知'},
-        {name: '身份', value: '未知'}
       ]
     }
   },
   methods: {
-    logout () {
-      /* 退出登录 */
-      this.$cookies.remove('userId')
-      this.$router.push('/login')
-    },
     handleCommand (command) {
-      this.$message('click on item ' + command)
+      if (command === 'homepage') {
+        this.$router.push('/')
+      } else if (command === 'logout') {
+        /* 退出登录 */
+        this.$cookies.remove('userId')
+        this.$cookies.remove('userType')
+        this.$router.push('/login')
+      }
     }
   }
 }
@@ -47,13 +47,6 @@ export default {
   .user {
     float: right;
     padding-top: 16px
-  }
-  .item {
-    margin-bottom: 10px;
-  }
-  .button {
-    display:block;
-    margin:0 auto;
   }
   .el-dropdown-link {
     cursor: pointer;
