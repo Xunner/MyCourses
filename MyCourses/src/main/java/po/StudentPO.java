@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 学生
@@ -26,9 +27,12 @@ public class StudentPO extends UserPO {
 	@Column(name = "student_type")
 	private StudentType studentType;
 
-	/** 学生参加的所有班级 */
-	@ManyToMany(fetch = FetchType.EAGER)
-	private List<ClassPO> classes;
+	/** 学生参加的所有班级及其成绩 */
+	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(name="student_class_score")
+	@MapKeyJoinColumn(name="ClassPO_id")
+	@Column(name="score")
+	private Map<ClassPO, Double> classScores;
 
 	public StudentPO() {
 	}

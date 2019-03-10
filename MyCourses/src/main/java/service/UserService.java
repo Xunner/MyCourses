@@ -20,4 +20,6 @@ public interface UserService {
 	Result registerTeacher(String email, String name, String password);
 
 	Result activateAccount(String activationCode);
+
+	Result updateUserInfo(Long userId, String name, String studentId);
 }

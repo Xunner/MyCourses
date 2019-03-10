@@ -5,6 +5,7 @@ import lombok.Data;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 开课、班次
@@ -35,12 +36,18 @@ public class ClassPO {
 	private Integer classOrder;
 
 	/** 第几学期的班次，默认从1开始 */
-	@Column(name = "class_order")
 	private Integer term;
 
-	/** 本班所有学生 */
-	@ManyToMany(mappedBy = "classes")
-	private List<StudentPO> students;
+	@OneToMany(targetEntity = HomeworkPO.class, cascade=CascadeType.REMOVE, fetch = FetchType.EAGER)
+	@JoinColumn(name = "class_id")
+	private List<HomeworkPO> homework;
+
+	/** 本班所有学生以及考试成绩 */
+	@ElementCollection
+	@CollectionTable(name="student_class_score")
+	@MapKeyJoinColumn(name="StudentPO_id")
+	@Column(name="score")
+	private Map<StudentPO, Double> studentScores;
 
 	public ClassPO() {
 	}

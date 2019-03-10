@@ -48,8 +48,10 @@ public class MessageServiceImpl implements MessageService {
 	}
 
 	@Override
-	public Result deleteMessage(Long messageId) {
-		messageDao.delete(messageId);
+	public Result deleteMessages(List<Long> messageIds) {
+		for (Long messageId : messageIds) {
+			messageDao.delete(messageId);
+		}
 		return Result.SUCCESS;
 	}
 

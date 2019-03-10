@@ -99,6 +99,24 @@ public class UserServiceImpl implements UserService {
 		return Result.NOT_EXIST;
 	}
 
+	@Override
+	public Result updateUserInfo(Long userId, String name, String studentId) {
+		UserPO user = userDao.findOne(userId);
+		if (user == null) {
+			return Result.NOT_EXIST;
+		}
+		if (user instanceof StudentPO) {
+			StudentPO student = (StudentPO) user;
+			student.setName(name);
+			student.setStudentId(studentId);
+			studentDao.save(student);
+		} else {
+			user.setName(name);
+			userDao.save(user);
+		}
+		return Result.SUCCESS;
+	}
+
 	@Scheduled(fixedRate = 60000)   // 60秒执行一次
 	public void handlePassedActivation() {
 		LocalDateTime now = LocalDateTime.now();

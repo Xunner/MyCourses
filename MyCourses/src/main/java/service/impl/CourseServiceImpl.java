@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import po.CoursePO;
 import service.CourseService;
+import vo.CourseProfile;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,14 +45,9 @@ public class CourseServiceImpl implements CourseService {
 		return null;
 	}
 
-	/**
-	 * TODO
-	 *
-	 * @param name
-	 * @param description
-	 */
 	@Override
-	public Result publishHomework(String name, String description) {
+	public List<CourseProfile> getCourseProfilesToTake(Long studentId) {
+		// TODO
 		return null;
 	}
 }

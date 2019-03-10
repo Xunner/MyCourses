@@ -17,7 +17,7 @@ public interface MessageService {
 
 	Result readMessage(Long messageId);
 
-	Result deleteMessage(Long messageId);
+	Result deleteMessages(List<Long> messageIds);
 
 	List<MessagePO> getAllMessagesByReceiverId(Long receiverId);
 }

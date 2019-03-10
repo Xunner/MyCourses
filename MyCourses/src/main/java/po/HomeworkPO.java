@@ -4,6 +4,8 @@ import lombok.Data;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 /**
  * （老师发布的）作业
@@ -33,7 +35,30 @@ public class HomeworkPO {
 	@Column(name = "size_limit")
 	private Integer sizeLimit;
 
-	/** 提交文件类型限制，格式形如：""(无限制), "txt", "txt,doc" */
+	/** 提交文件类型限制，格式形如：""(无限制), "txt", "txt/doc" */
 	@Column(name = "type_restriction")
 	private String typeRestriction;
+
+	@OneToMany(targetEntity = SubmissionPO.class, cascade=CascadeType.REMOVE, fetch = FetchType.LAZY)
+	@JoinColumn(name = "homework_id")
+	private List<SubmissionPO> submissions;
+
+	/** 本作业所有学生及其成绩 */
+	@ElementCollection
+	@CollectionTable(name="student_homework_score")
+	@MapKeyJoinColumn(name="student_id")
+	@Column(name="score")
+	private Map<StudentPO, Double> studentScores;
+
+	public HomeworkPO() {
+	}
+
+	public HomeworkPO(Long classId, String name, String description, LocalDateTime deadline, Integer sizeLimit, String typeRestriction) {
+		this.classId = classId;
+		this.name = name;
+		this.description = description;
+		this.deadline = deadline;
+		this.sizeLimit = sizeLimit;
+		this.typeRestriction = typeRestriction;
+	}
 }

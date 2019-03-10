@@ -4,6 +4,7 @@ import enums.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import po.ClassPO;
 import po.MessagePO;
 import po.StudentPO;
 import po.UserPO;
@@ -51,7 +52,7 @@ public class MainController {
 		} else {
 			ret.put("result", Result.SUCCESS);
 			ret.put("userId", user.getId());
-			ret.put("userType", user.getClass());
+			ret.put("userType", user.getClass().getSimpleName().replace("PO", ""));
 		}
 		return ret;
 	}
@@ -91,17 +92,36 @@ public class MainController {
 	}
 
 	@ResponseBody
-	@RequestMapping(value = "/MyInformation/", method = RequestMethod.GET)
-	public MyInformationVO getMyInformation(@RequestParam("userId") Long userId, @RequestParam("userType") String userType) {
+	@RequestMapping(value = "/MyClasses", method = RequestMethod.GET)
+	public MyClassesVO getMyClasses(@RequestParam(value = "userId") Long userId) {
+		List<ClassProfile> myClasses = classService.getMyClassProfiles(userId);
+		if (myClasses == null) {
+			return new MyClassesVO(Result.FAILED, null);
+		} else {
+			return new MyClassesVO(Result.SUCCESS, myClasses);
+		}
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/TakeClasses", method = RequestMethod.GET)
+	public List<CourseProfile> getTakeClasses(@RequestParam(value = "userId") Long userId) {
+		return courseService.getCourseProfilesToTake(userId);
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/MyInformation", method = RequestMethod.GET)
+	public MyInformationVO getMyInformation(@RequestParam(value = "userId") Long userId, @RequestParam(value = "userType") String userType) {
 		System.out.println("MyInformation: " + userId + ", " + userType);
 		// 准备userInfo
 		UserPO user = userService.findById(userId);
 		List<Pair> userInfo = new ArrayList<>();
 		userInfo.add(new Pair("姓名", user.getName()));
-		userInfo.add(new Pair("身份", user.getName()));
-		userInfo.add(new Pair("邮箱", user.getName()));
+		userInfo.add(new Pair("邮箱", user.getEmail()));
 		if (user instanceof StudentPO) {
-			userInfo.add(new Pair("学号", ((StudentPO) user).getStudentType().getValue()));
+			userInfo.add(new Pair("身份", ((StudentPO) user).getStudentType().getValue()));
+			userInfo.add(new Pair("学号", ((StudentPO) user).getStudentId()));
+		} else {
+			userInfo.add(new Pair("身份", ((StudentPO) user).getStudentType().getValue()));
 		}
 		// 准备classesTaken TODO
 		List<TreeNode> classesTaken = new ArrayList<>();
@@ -115,6 +135,34 @@ public class MainController {
 		for (MessagePO message : messagePOs) {
 			messages.add(new MessageVO(message.getId(), message.getTitle(), message.getSenderId(), message.getTime(), message.getMessage()));
 		}
-		return new MyInformationVO(userInfo, classesTaken, classesQuit, scores, messages);
+		return new MyInformationVO(Result.SUCCESS, userInfo, classesTaken, classesQuit, scores, messages);
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/deleteMessages", method = RequestMethod.POST)
+	public Result deleteMessages(@RequestBody List<Long> userIds) {
+		System.out.println(userIds.toString());
+		return messageService.deleteMessages(userIds);
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/updateUserInfo", method = RequestMethod.POST)
+	public Result updateUserInfo(@RequestBody UserInfo userInfo) {
+		System.out.println("updateUserInfo: " + userInfo.toString());
+		return userService.updateUserInfo(userInfo.userId, userInfo.name, userInfo.studentId);
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/class", method = RequestMethod.GET)
+	public Map<String, Object> getClass(@RequestParam(value = "userId") Long userId, @RequestParam(value = "classId") Long classId) {
+		Map<String, Object> ret = new HashMap<>();
+		ClassInfo classInfo = classService.getClassInfo(userId, classId);
+		ret.put("classInfo", classInfo);
+		if (classInfo == null) {
+			ret.put("result", Result.NOT_EXIST);
+		} else {
+			ret.put("result", Result.SUCCESS);
+		}
+		return ret;
 	}
 }

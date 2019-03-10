@@ -1,6 +1,9 @@
 package service;
 
 import enums.Result;
+import vo.CourseProfile;
+
+import java.util.List;
 
 /**
  * 课程服务接口
@@ -17,8 +20,5 @@ public interface CourseService {
 	 */
 	Result uploadCourseware();
 
-	/**
-	 * TODO
-	 */
-	Result publishHomework(String name, String description);
+	List<CourseProfile> getCourseProfilesToTake(Long studentId);
 }
