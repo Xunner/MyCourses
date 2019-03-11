@@ -22,7 +22,7 @@ export default {
           this.$router.push('/MyClasses')
           break
         case 'Teacher':
-          this.$message.error('TODO Teacher')
+          this.$router.push('/TeacherCourses')
           break
         case 'Admin':
           this.$message.error('TODO Admin')

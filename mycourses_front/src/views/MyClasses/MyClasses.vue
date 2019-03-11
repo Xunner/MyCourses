@@ -48,7 +48,7 @@
                   <div class="left">{{homework.description}}</div>
                   <div class="left">截止日期：{{homework.deadline}}</div>
                   <el-upload :data="userId" action="/MyCourses/submitHomework" :before-upload="beforeHomeworkUpload"
-                             v-show="!homework.submitted" style="margin-top: 15px" drag>
+                             :on-success="uploadHomeworkSuccess" v-show="!homework.submitted" style="margin-top: 15px" drag>
                     <i class="el-icon-upload"></i>
                     <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
                     <div class="el-upload__tip" slot="tip">
@@ -71,6 +71,18 @@
                   </el-card>
                 </el-collapse-item>
               </el-collapse>
+              <el-form class="post-wrap" :model="postForm" :rules="postRules" ref="postForm">
+                <h3>发布新帖子</h3>
+                <el-form-item prop="title">
+                  <el-input class="input" type="text" placeholder="标题" v-model="postForm.title"></el-input>
+                </el-form-item>
+                <el-form-item prop="text">
+                  <el-input type="textarea" :autosize="{minRows: 4}" placeholder="请输入正文" v-model="postForm.text"></el-input>
+                </el-form-item>
+                <el-form-item>
+                  <el-button class="button" type="primary" @click="addPost('postForm')">发帖</el-button>
+                </el-form-item>
+              </el-form>
             </el-card>
           </el-col>
         </el-row>
@@ -138,7 +150,7 @@ export default {
         this.$http.post('/MyCourses/quitClass', {classId: classId, studentId: this.$cookies.get('userId')}).then(res => {
           if (res.data.bodyText === 'SUCCESS') {
             this.$message.success('退课成功！')
-            this.$router.push('/MyClasses')
+            this.isProfile = true
           } else {
             this.$message.error('网络错误，请刷新或稍后再试')
           }
@@ -161,6 +173,37 @@ export default {
           return isValidType && isValidSize
         }
       }
+    },
+    addPost (formName) {
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          const data = {userId: this.userId, title: this.postForm.title, text: this.postForm.text}
+          /* HTTP请求 */
+          this.$http.post('/MyCourses/addPost', data).then((res) => {
+            console.log(res.data)
+            if (res.data.result === 'SUCCESS') {
+              this.classInfo.posts.push(res.data.post)
+              this.$message.success('发帖成功')
+            } else {
+              this.$message.error('网络错误，请刷新或稍后再试')
+              console.log('未知错误：' + res.data.result)
+            }
+          }, () => {
+            this.$message.error('网络错误，请刷新或稍后再试')
+          })
+        } else {
+          return false
+        }
+      })
+    },
+    uploadHomeworkSuccess (res) {
+      console.log(res.data)
+      if (res.data.result === 'SUCCESS') {
+        // this.classInfo.h.push(res.data.courseware)
+        this.$message.success('上传作业成功！')
+      } else {
+        this.$message.error('网络错误，请刷新或稍后再试')
+      }
     }
   },
   data () {
@@ -170,6 +213,11 @@ export default {
       isProfile: false,
       activeHomeworkId: '',
       activePostId: '',
+      postForm: {title: '', text: ''},
+      postRules: {
+        title: [{required: true, message: '请输入标题', trigger: 'blur'}],
+        text: [{required: true, message: '请输入正文', trigger: 'blur'}]
+      },
       myClasses: [
         {
           classId: '1',
@@ -253,11 +301,8 @@ export default {
   .left {
     text-align: left;
   }
-  .right {
-    float: right;
-    margin: 15px 15px;
-  }
-  .bottom {
-    margin-left: auto;
+  .post-wrap {
+    text-align: center;
+    margin-top: 40px;
   }
 </style>

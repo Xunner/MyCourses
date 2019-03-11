@@ -4,53 +4,57 @@
       <student-nav :name="name"></student-nav>
     </el-header>
     <el-main>
-      <el-card class="box-card">
-        <div slot="header" class="text">账户信息
-          <el-button v-if="!isEditing" style="float: right; padding: 3px 0" type="text" icon="el-icon-edit"
-                     @click="editUser">编辑</el-button>
-          <el-button v-else style="float: right; padding: 3px 0" type="text" icon="el-icon-edit"
-                     @click="cancelEditUser">取消编辑</el-button>
-        </div>
-        <div v-for="(item, i) of userInfo" :key=i class="text">
-          <label>{{item.name}}:&nbsp;&nbsp;</label>
-          <el-input v-if="isEditing && item.name === '姓名'" v-model="editUserForm.name"
-                    size="mini" class="input"></el-input>
-          <el-input v-else-if="isEditing && item.name === '学号'" v-model="editUserForm.studentId"
-                    size="mini" class="input"></el-input>
-          <span v-else>{{item.value}}</span>
-        </div>
-        <el-button v-if="isEditing" class="button" type="primary" @click="updateUserInfo()">保存修改</el-button>
-      </el-card>
-      <el-card class="box-card">
-        <div slot="header" class="text">用户信息统计</div>
-        <el-collapse v-model="activeNames">
-          <el-collapse-item title="选课" name="1">
-            <el-tree :data="classesTaken" :props="defaultProps" default-expand-all></el-tree>
-          </el-collapse-item>
-          <el-collapse-item title="退课" name="2">
-            <el-tree :data="classesQuit" :props="defaultProps"></el-tree>
-          </el-collapse-item>
-          <el-collapse-item title="成绩" name="3">
-            <el-tree :data="scores" :props="defaultProps"></el-tree>
-          </el-collapse-item>
-        </el-collapse>
-      </el-card>
-      <el-card class="box-card">
-        <div slot="header" class="text">消息
-          <el-button style="float: right; padding: 3px 0" type="text" icon="el-icon-delete" @click="deleteAllMessages">全部删除</el-button>
-        </div>
-        <el-card :body-style="{ padding: '0px' }" class="message-card" v-for="(item, i) of messages" :key=i>
-          <div slot="header" style="text-align: left">
-            {{item.title}}
-            <i class="el-icon-error deleteMessageIcon" style="float: right" @click="deleteMessage(item.messageId)"></i>
-            <span class="message-sender">发送者：{{item.sender}}</span>
-          </div>
-          <div class="message-message">{{item.message}}</div>
-          <div class="bottom">
-            <time class="time">{{item.time}}</time>
-          </div>
-        </el-card>
-      </el-card>
+      <el-row>
+        <el-col>
+          <el-card class="box-card" style="width: 25%">
+            <div slot="header" class="text">账户信息
+              <el-button v-if="!isEditing" style="float: right; padding: 3px 0" type="text" icon="el-icon-edit"
+                         @click="editUser">编辑</el-button>
+              <el-button v-else style="float: right; padding: 3px 0" type="text" icon="el-icon-edit"
+                         @click="cancelEditUser">取消编辑</el-button>
+            </div>
+            <div v-for="(item, i) of userInfo" :key=i class="text">
+              <label>{{item.name}}:&nbsp;&nbsp;</label>
+              <el-input v-if="isEditing && item.name === '姓名'" v-model="editUserForm.name"
+                        size="mini" class="input"></el-input>
+              <el-input v-else-if="isEditing && item.name === '学号'" v-model="editUserForm.studentId"
+                        size="mini" class="input"></el-input>
+              <span v-else>{{item.value}}</span>
+            </div>
+            <el-button v-if="isEditing" class="button" type="primary" @click="updateUserInfo()">保存修改</el-button>
+          </el-card>
+          <el-card class="box-card" style="width: 37%">
+            <div slot="header" class="text">选/退课统计</div>
+            <el-table :data="classesStatistic" :default-sort = "{prop: 'grade', order: 'ascending'}">
+              <el-table-column prop="grade" label="年级" sortable></el-table-column>
+              <el-table-column prop="term" label="学期" sortable></el-table-column>
+              <el-table-column prop="name" label="课名" sortable></el-table-column>
+              <el-table-column prop="teacher" label="教师" sortable></el-table-column>
+              <el-table-column prop="score" label="成绩" sortable></el-table-column>
+              <el-table-column prop="isQuit" label="选/退" sortable :formatter="isQuitFormatter"></el-table-column>
+            </el-table>
+          </el-card>
+          <el-card class="box-card">
+            <div slot="header" class="text">消息
+              <el-button style="float: right; padding: 3px 0" type="text" icon="el-icon-delete" @click="deleteAllMessages">全部删除</el-button>
+            </div>
+            <el-card :body-style="{ padding: '0px' }" class="message-card" v-for="(item, i) of messages" :key=i>
+              <div slot="header" style="text-align: left">
+                {{item.title}}
+                <i class="el-icon-error deleteMessageIcon" style="float: right" @click="deleteMessage(item.messageId)"></i>
+                <span class="message-sender">发送者：{{item.sender}}</span>
+              </div>
+              <div class="message-message">{{item.message}}</div>
+              <div class="bottom">
+                <time class="time">{{item.time}}</time>
+              </div>
+            </el-card>
+          </el-card>
+        </el-col>
+        <el-col>
+          <el-button @click="deleteAccount">注销账户</el-button>
+        </el-col>
+      </el-row>
     </el-main>
   </el-container>
 </template>
@@ -59,37 +63,30 @@
 export default {
   name: 'MyInformation',
   mounted () {
-    if (this.$cookies.isKey('userId')) {
-      /* HTTP请求 */
-      this.$http.get('/MyCourses/MyInformation', {
-        'params': {
-          'userId': this.$cookies.get('userId'),
-          'userType': this.$cookies.get('userType')
-        }
-      }).then((res) => {
-        if (res.data.result === 'SUCCESS') {
-          this.userInfo = res.data.userInfo
-          this.classesTaken = res.data.classesTaken
-          this.classesQuit = res.data.classesQuit
-          this.scores = res.data.scores
-          this.messages = res.data.messages
-          res.data.userInfo.forEach(item => {
-            if (item.name === '姓名') {
-              this.editUserForm.name = item.value
-            } else if (item.name === '学号') {
-              this.editUserForm.studentId = item.value
-            }
-          })
-        } else {
-          this.$message.error('网络错误，请刷新或稍后再试')
-        }
-      }, () => {
+    // if (this.$cookies.isKey('userId')) {
+    /* HTTP请求 */
+    this.$http.get('/MyCourses/MyInformation', {'params': {'userId': this.$cookies.get('userId')}}).then((res) => {
+      if (res.data.result === 'SUCCESS') {
+        this.userInfo = res.data.userInfo
+        this.classesStatistic = res.data.classesStatistic
+        this.messages = res.data.messages
+        res.data.userInfo.forEach(item => {
+          if (item.name === '姓名') {
+            this.editUserForm.name = item.value
+          } else if (item.name === '学号') {
+            this.editUserForm.studentId = item.value
+          }
+        })
+      } else {
         this.$message.error('网络错误，请刷新或稍后再试')
-      })
-    } else {
-      /* 如果cookie不存在，则跳转到登录页 */
-      this.$router.push('/login')
-    }
+      }
+    }, () => {
+      this.$message.error('网络错误，请刷新或稍后再试')
+    })
+    // } else {
+    //   /* 如果cookie不存在，则跳转到登录页 */
+    //   this.$router.push('/login')
+    // }
   },
   data () {
     return {
@@ -101,98 +98,9 @@ export default {
         name: '未知',
         studentId: '未知'
       },
-      classesTaken: [{
-        label: '大一',
-        children: [{
-          label: '第一学期',
-          children: [{
-            label: '课程1'
-          }]
-        }, {
-          label: '第二学期',
-          children: [{
-            label: '课程2'
-          }]
-        }]
-      }, {
-        label: '大二',
-        children: [{
-          label: '第一学期',
-          children: [{
-            label: '课程3'
-          }]
-        }, {
-          label: '第二学期',
-          children: [{
-            label: '课程4'
-          }]
-        }]
-      }, {
-        label: '大三',
-        children: [{
-          label: '第一学期',
-          children: [{
-            label: '课程5'
-          }]
-        }]
-      }],
-      classesQuit: [{
-        label: '大一',
-        children: [{
-          label: '第一学期',
-          children: [{
-            label: '课程1'
-          }]
-        }, {
-          label: '第二学期',
-          children: [{
-            label: '课程2'
-          }]
-        }]
-      }, {
-        label: '大二',
-        children: [{
-          label: '第二学期',
-          children: [{
-            label: '课程4'
-          }]
-        }]
-      }],
-      scores: [{
-        label: '大一',
-        children: [{
-          label: '第一学期',
-          children: [{
-            label: '课程1: 100'
-          }]
-        }, {
-          label: '第二学期',
-          children: [{
-            label: '课程2: 100'
-          }]
-        }]
-      }, {
-        label: '大二',
-        children: [{
-          label: '第一学期',
-          children: [{
-            label: '课程3: 100'
-          }]
-        }, {
-          label: '第二学期',
-          children: [{
-            label: '课程4: 100'
-          }]
-        }]
-      }, {
-        label: '大三',
-        children: [{
-          label: '第一学期',
-          children: [{
-            label: '课程5: 100'
-          }]
-        }]
-      }],
+      classesStatistic: [{grade: 1, term: 1, name: '课程1', teacher: '教师1', score: 100, isQuit: false},
+        {grade: 1, term: 1, name: '课程2', teacher: '教师2', score: 0, isQuit: true},
+        {grade: 2, term: 1, name: '课程3', teacher: '教师3', score: 60, isQuit: false}],
       defaultProps: {
         children: 'children',
         label: 'label'
@@ -267,6 +175,33 @@ export default {
       }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
       })
+    },
+    deleteAccount () {
+      this.$confirm('是否永久注销你的账号？此举动不会真正删除该账号的信息，而你将无法再使用该账号！', '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$http.post('/MyCourses/deleteAccount', {
+          userId: this.$cookies.get('userId')
+        }).then((res) => {
+          if (res.bodyText === 'SUCCESS') {
+            this.$message.success('成功永久注销你的账号!')
+            /* 退出登录 */
+            this.$cookies.remove('userId')
+            this.$cookies.remove('userType')
+            this.$router.push('/login')
+          } else {
+            this.$message.error('网络错误，请刷新或稍后再试')
+          }
+        }, () => {
+          this.$message.error('网络错误，请刷新或稍后再试')
+        })
+      }).catch(() => {
+      })
+    },
+    isQuitFormatter (row) {
+      return row.isQuit ? '已退' : '选上'
     }
   }
 }
