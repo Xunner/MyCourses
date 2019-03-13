@@ -7,8 +7,9 @@ import MyClasses from '@/views/MyClasses/MyClasses.vue'
 import TakeClasses from '@/views/TakeClasses/TakeClasses.vue'
 import MyInformation from '@/views/MyInformation/MyInformation.vue'
 import TeacherCourses from '@/views/TeacherCourses/TeacherCourses.vue'
-import NewCourses from '@/views/NewCourses/NewCourses.vue'
 import TeacherInfo from '@/views/TeacherInfo/TeacherInfo.vue'
+import Review from '@/views/review/review.vue'
+import Statistics from '@/views/statistics/statistics.vue'
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
 
@@ -43,13 +44,17 @@ export default new Router({
       name: 'TeacherCourses',
       component: TeacherCourses
     }, {
-      path: '/NewCourses',
-      name: 'NewCourses',
-      component: NewCourses
-    }, {
       path: '/TeacherInfo',
       name: 'TeacherInfo',
       component: TeacherInfo
+    }, {
+      path: '/review',
+      name: 'Review',
+      component: Review
+    }, {
+      path: '/statistics',
+      name: 'Statistics',
+      component: Statistics
     }
   ]
 })

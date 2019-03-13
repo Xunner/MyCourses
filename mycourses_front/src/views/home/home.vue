@@ -1,10 +1,5 @@
 <template>
   <el-container>
-    <el-header>
-      <student-nav></student-nav>
-    </el-header>
-    <el-main>
-    </el-main>
   </el-container>
 </template>
 
@@ -25,7 +20,7 @@ export default {
           this.$router.push('/TeacherCourses')
           break
         case 'Admin':
-          this.$message.error('TODO Admin')
+          this.$message.error('/review')
           break
         default:
           this.$message.error('网络错误，请刷新或稍后再试')

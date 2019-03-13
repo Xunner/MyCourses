@@ -15,15 +15,15 @@
 
 <script>
 export default {
-  name: 'TeacherNav',
+  name: 'AdminNav',
   props: {
     name: String
   },
   data () {
     return {
       navList: [
-        {name: '/TeacherCourses', navItem: '我的课程'},
-        {name: '/TeacherInfo', navItem: '个人信息'}
+        {name: '/review', navItem: '审核课程'},
+        {name: '/statistics', navItem: '信息统计'}
       ]
     }
   },

@@ -7,12 +7,14 @@ import VueResource from 'vue-resource'
 import VueCookies from 'vue-cookies'
 import StudentNav from './components/StudentNav'
 import TeacherNav from './components/TeacherNav'
+import AdminNav from './components/AdminNav'
 
 Vue.use(VueCookies)
 Vue.use(VueResource)
 
 Vue.component('StudentNav', StudentNav)
 Vue.component('TeacherNav', TeacherNav)
+Vue.component('AdminNav', AdminNav)
 
 Vue.config.productionTip = false
 

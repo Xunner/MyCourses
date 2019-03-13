@@ -49,6 +49,9 @@
           <el-form-item label="班级个数">
             <el-input-number v-model="newClassForm.classNumber" :min="1" :max="99" style="float: left"></el-input-number>
           </el-form-item>
+          <el-form-item label="限选人数">
+            <el-input-number v-model="newClassForm.maxNumber" :min="0" :max="9999" style="float: left"></el-input-number>
+          </el-form-item>
           <el-form-item label="日期" prop="time">
               <el-date-picker v-model="newClassForm.time" type="daterange" range-separator="至"
                               start-placeholder="开始日期" end-placeholder="结束日期" style="float: left"></el-date-picker>
@@ -132,6 +135,24 @@
 <script>
 export default {
   name: 'TeacherCourses',
+  mounted () {
+    // if (this.$cookies.isKey('userId')) {
+    /* HTTP请求 */
+    this.$http.get('/MyCourses/TeacherCourses', {'params': {'userId': this.$cookies.get('userId')}
+    }).then((res) => {
+      if (res.data.result === 'SUCCESS') {
+        this.teacherCourses = res.data.teacherCourses
+      } else {
+        this.$message.error('网络错误，请刷新或稍后再试')
+      }
+    }, () => {
+      this.$message.error('网络错误，请刷新或稍后再试')
+    })
+    // } else {
+    //   /* 如果cookie不存在，则跳转到登录页 */
+    //   this.$router.push('/login')
+    // }
+  },
   methods: {
     clickClass (classId) {
       this.$http.get('/MyCourses/class', {'params': {userId: this.userId, classId: classId}}).then(res => {
@@ -235,7 +256,8 @@ export default {
             startTime: this.newClassForm.time[0],
             endTime: this.newClassForm.time[1],
             classNumber: this.newClassForm.classNumber,
-            term: this.newClassForm.term
+            term: this.newClassForm.term,
+            maxNumber: this.newClassForm.maxNumber
           }).then(res => {
             if (res.data.result === 'SUCCESS') {
               this.newClassDialogVisible = false
@@ -267,6 +289,7 @@ export default {
         name: '',
         term: 1,
         classNumber: 1,
+        maxNumber: 0,
         time: []
       },
       newCourseForm: {
@@ -366,9 +389,8 @@ export default {
     float: left;
   }
   .teacher-class {
-    /*display: block;*/
-    margin-left: 0;
-    margin-right: 20px;
+    margin-left: 10px;
+    margin-right: 10px;
     margin-bottom: 16px;
   }
   .left {

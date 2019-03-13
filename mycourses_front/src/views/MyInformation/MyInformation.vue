@@ -25,7 +25,7 @@
           </el-card>
           <el-card class="box-card" style="width: 37%">
             <div slot="header" class="text">选/退课统计</div>
-            <el-table :data="classesStatistic" :default-sort = "{prop: 'grade', order: 'ascending'}">
+            <el-table :data="classesStatistic" :default-sort = "{prop: 'grade', order: 'ascending'}" max-height="450px" stripe>
               <el-table-column prop="grade" label="年级" sortable></el-table-column>
               <el-table-column prop="term" label="学期" sortable></el-table-column>
               <el-table-column prop="name" label="课名" sortable></el-table-column>
