@@ -22,4 +22,6 @@ public interface UserService {
 	Result activateAccount(String activationCode);
 
 	Result updateUserInfo(Long userId, String name, String studentId);
+
+	Result deleteAccount(Long userId);
 }

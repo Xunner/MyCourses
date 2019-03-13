@@ -7,11 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import po.CoursePO;
 import service.CourseService;
-import vo.CourseProfile;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * 课程服务
@@ -24,7 +21,9 @@ import java.util.List;
 @Transactional
 public class CourseServiceImpl implements CourseService {
 	private final CourseDao courseDao;
-	private final List<CoursePO> coursesToReviewed = Collections.synchronizedList(new ArrayList<>());
+	private final Map<Long, CoursePO> coursesToReviewed = Collections.synchronizedMap(new HashMap<>());
+	private Long id = 0L;
+	private final Boolean lock = true;
 
 	@Autowired
 	public CourseServiceImpl(CourseDao courseDao) {
@@ -33,8 +32,27 @@ public class CourseServiceImpl implements CourseService {
 
 	@Override
 	public Result createCourse(Long teacherId, String name, Integer grade) {
-		coursesToReviewed.add(new CoursePO(teacherId, name, grade));
+		synchronized (lock) {
+			coursesToReviewed.put(++id, new CoursePO(teacherId, name, grade));
+		}
 		return Result.SUCCESS;
+	}
+
+	@Override
+	public Result reviewCourse(Long courseId, boolean pass) {
+		Iterator<Map.Entry<Long, CoursePO>> entries = coursesToReviewed.entrySet().iterator();
+		while (entries.hasNext()) {
+			Map.Entry<Long, CoursePO> entry = entries.next();
+			if (courseId.equals(entry.getKey())) {
+				if (pass) {
+					courseDao.save(entry.getValue());
+				}
+				entries.remove();
+				System.out.println("完成开课在线审核：" + courseId);
+				return Result.SUCCESS;
+			}
+		}
+		return Result.NOT_EXIST;
 	}
 
 	/**
@@ -42,12 +60,6 @@ public class CourseServiceImpl implements CourseService {
 	 */
 	@Override
 	public Result uploadCourseware() {
-		return null;
-	}
-
-	@Override
-	public List<CourseProfile> getCourseProfilesToTake(Long studentId) {
-		// TODO
 		return null;
 	}
 }

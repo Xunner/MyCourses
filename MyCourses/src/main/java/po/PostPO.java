@@ -33,4 +33,14 @@ public class PostPO {
 	@OneToMany(targetEntity = ReplyPO.class, cascade=CascadeType.REMOVE, fetch = FetchType.LAZY)
 	@JoinColumn(name = "post_id")
 	private List<ReplyPO> replies;
+
+	public PostPO() {
+	}
+
+	public PostPO(Long userId, String title, String text, LocalDateTime time) {
+		this.userId = userId;
+		this.title = title;
+		this.text = text;
+		this.time = time;
+	}
 }

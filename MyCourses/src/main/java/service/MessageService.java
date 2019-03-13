@@ -13,7 +13,7 @@ import java.util.List;
  * @author 巽
  **/
 public interface MessageService {
-	Result sendMessage(Long senderId, List<Long> receiverIds, String title, String message);
+	Result sendMessages(Long senderId, List<Long> receiverIds, String title, String message);
 
 	Result readMessage(Long messageId);
 

@@ -1,9 +1,7 @@
 package service;
 
 import enums.Result;
-import po.ClassPO;
-import vo.ClassInfo;
-import vo.ClassProfile;
+import vo.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,7 +16,9 @@ import java.util.List;
 public interface ClassService {
 	List<ClassProfile> getMyClassProfiles(Long userId);
 
-	Result publishClass(Long teacherId, Long courseId, LocalDateTime startTime, LocalDateTime endTime, List<Integer> classOrders, Integer term);
+	Result publishClasses(Long courseId, LocalDateTime startTime, LocalDateTime endTime, Integer classNumber, Integer term, Integer maxNumber);
+
+	Result reviewClass(Long classId, boolean pass);
 
 	Result takeClass(Long studentId, Long classId);
 
@@ -27,4 +27,10 @@ public interface ClassService {
 	Result publishHomework(Long classId, String name, String description, LocalDateTime deadline, Integer sizeLimit, String typeRestriction);
 
 	ClassInfo getClassInfo(Long userId, Long classId);
+
+	List<ClassStatisticVO> getClassStatistics(Long studentId);
+
+	PostVO addPost(Long userId, String title, String text);
+
+	TakeClassesVO getClassesToTake(Long studentId);
 }

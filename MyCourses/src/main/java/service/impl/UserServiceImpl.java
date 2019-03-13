@@ -117,6 +117,17 @@ public class UserServiceImpl implements UserService {
 		return Result.SUCCESS;
 	}
 
+	@Override
+	public Result deleteAccount(Long userId) {
+		UserPO userPO = userDao.findOne(userId);
+		if (userPO == null) {
+			return Result.NOT_EXIST;
+		}
+		userPO.setDeleted(true);
+		userDao.save(userPO);
+		return Result.SUCCESS;
+	}
+
 	@Scheduled(fixedRate = 60000)   // 60秒执行一次
 	public void handlePassedActivation() {
 		LocalDateTime now = LocalDateTime.now();

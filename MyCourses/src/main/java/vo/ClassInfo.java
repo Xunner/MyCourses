@@ -23,17 +23,15 @@ public class ClassInfo {
 	public List<HomeworkVO> homework;
 	public List<PostVO> posts;
 
-//	public ClassInfo(Long id, String name, String teacherName, Integer grade, Integer term, Integer classOrder, LocalDateTime startTime, LocalDateTime endTime, List<CoursewareVO> courseware, List<HomeworkVO> homework, List<PostVO> post) {
-//		this.id = id;
-//		this.name = name;
-//		this.teacherName = teacherName;
-//		this.grade = grade;
-//		this.term = term;
-//		this.classOrder = classOrder;
-//		this.startTime = startTime;
-//		this.endTime = endTime;
-//		this.courseware = courseware;
-//		this.homework = homework;
-//		this.post = post;
-//	}
+	public ClassInfo(Long id, String name, String teacherName, Integer grade, Integer term, Integer classOrder, LocalDateTime startTime, LocalDateTime endTime) {
+		this.id = id;
+		this.name = name;
+		this.teacherName = teacherName;
+		this.grade = grade;
+		this.term = term;
+		this.classOrder = classOrder;
+		this.startTime = startTime;
+		this.endTime = endTime;
+	}
+
 }

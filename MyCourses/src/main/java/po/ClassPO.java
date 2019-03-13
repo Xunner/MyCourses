@@ -1,5 +1,6 @@
 package po;
 
+import enums.ClassState;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -38,6 +39,14 @@ public class ClassPO {
 	/** 第几学期的班次，默认从1开始 */
 	private Integer term;
 
+	@Enumerated
+	@Column(name = "class_state")
+	private ClassState classState;
+
+	/** 选课人数上限 */
+	@Column(name = "max_number")
+	private Integer maxNumber;
+
 	@OneToMany(targetEntity = HomeworkPO.class, cascade=CascadeType.REMOVE, fetch = FetchType.EAGER)
 	@JoinColumn(name = "class_id")
 	private List<HomeworkPO> homework;
@@ -52,10 +61,13 @@ public class ClassPO {
 	public ClassPO() {
 	}
 
-	public ClassPO(LocalDateTime startTime, LocalDateTime endTime, Integer classOrder, Integer term) {
+	public ClassPO(Long courseId, LocalDateTime startTime, LocalDateTime endTime, Integer classOrder, Integer term, ClassState classState, Integer maxNumber) {
+		this.courseId = courseId;
 		this.startTime = startTime;
 		this.endTime = endTime;
 		this.classOrder = classOrder;
 		this.term = term;
+		this.classState = classState;
+		this.maxNumber = maxNumber;
 	}
 }

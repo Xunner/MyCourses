@@ -14,17 +14,13 @@ import java.util.List;
 public class MyInformationVO {
 	public Result result;
 	public List<Pair> userInfo;
-	public List<TreeNode> classesTaken;
-	public List<TreeNode> classesQuit;
-	public List<TreeNode> scores;
+	public List<ClassStatisticVO> classesStatistic;
 	public List<MessageVO> messages;
 
-	public MyInformationVO(Result result, List<Pair> userInfo, List<TreeNode> classesTaken, List<TreeNode> classesQuit, List<TreeNode> scores, List<MessageVO> messages) {
+	public MyInformationVO(Result result, List<Pair> userInfo, List<ClassStatisticVO> classesStatistic, List<MessageVO> messages) {
 		this.result = result;
 		this.userInfo = userInfo;
-		this.classesTaken = classesTaken;
-		this.classesQuit = classesQuit;
-		this.scores = scores;
+		this.classesStatistic = classesStatistic;
 		this.messages = messages;
 	}
 }

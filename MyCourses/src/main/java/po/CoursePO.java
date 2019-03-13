@@ -28,7 +28,7 @@ public class CoursePO {
 	/** 本课属于几年级的课程，默认从1开始 */
 	private Integer grade;
 
-	@OneToMany(targetEntity = CoursewarePO.class, cascade=CascadeType.REMOVE, fetch = FetchType.EAGER)
+	@OneToMany(targetEntity = CoursewarePO.class, cascade=CascadeType.REMOVE, fetch = FetchType.LAZY)
 	@JoinColumn(name = "course_id")
 	private List<CoursewarePO> coursewares;
 

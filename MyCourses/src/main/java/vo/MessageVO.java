@@ -12,11 +12,11 @@ import java.time.LocalDateTime;
 public class MessageVO {
 	public Long messageId;
 	public String title;
-	public Long sender;
+	public String sender;
 	public LocalDateTime time;
 	public String message;
 
-	public MessageVO(Long messageId, String title, Long sender, LocalDateTime time, String message) {
+	public MessageVO(Long messageId, String title, String sender, LocalDateTime time, String message) {
 		this.messageId = messageId;
 		this.title = title;
 		this.sender = sender;

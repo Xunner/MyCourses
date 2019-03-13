@@ -29,7 +29,7 @@ public class MessageServiceImpl implements MessageService {
 	}
 
 	@Override
-	public Result sendMessage(Long senderId, List<Long> receiverIds, String title, String message) {
+	public Result sendMessages(Long senderId, List<Long> receiverIds, String title, String message) {
 		for (Long receiverId : receiverIds) {
 			messageDao.save(new MessagePO(senderId, receiverId, LocalDateTime.now(), title, message, true));
 		}

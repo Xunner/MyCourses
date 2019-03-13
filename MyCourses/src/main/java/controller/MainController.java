@@ -4,16 +4,15 @@ import enums.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import po.ClassPO;
-import po.MessagePO;
-import po.StudentPO;
-import po.UserPO;
+import po.*;
 import service.ClassService;
 import service.CourseService;
 import service.MessageService;
 import service.UserService;
 import vo.*;
 
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -104,15 +103,15 @@ public class MainController {
 
 	@ResponseBody
 	@RequestMapping(value = "/TakeClasses", method = RequestMethod.GET)
-	public List<CourseProfile> getTakeClasses(@RequestParam(value = "userId") Long userId) {
-		return courseService.getCourseProfilesToTake(userId);
+	public TakeClassesVO getTakeClasses(@RequestParam(value = "studentId") Long studentId) {
+		return classService.getClassesToTake(studentId);
 	}
 
 	@ResponseBody
 	@RequestMapping(value = "/MyInformation", method = RequestMethod.GET)
-	public MyInformationVO getMyInformation(@RequestParam(value = "userId") Long userId, @RequestParam(value = "userType") String userType) {
-		System.out.println("MyInformation: " + userId + ", " + userType);
-		// 准备userInfo
+	public MyInformationVO getMyInformation(@RequestParam(value = "userId") Long userId) {
+		System.out.println("MyInformation: " + userId);
+		// 装载userInfo
 		UserPO user = userService.findById(userId);
 		List<Pair> userInfo = new ArrayList<>();
 		userInfo.add(new Pair("姓名", user.getName()));
@@ -121,21 +120,22 @@ public class MainController {
 			userInfo.add(new Pair("身份", ((StudentPO) user).getStudentType().getValue()));
 			userInfo.add(new Pair("学号", ((StudentPO) user).getStudentId()));
 		} else {
-			userInfo.add(new Pair("身份", ((StudentPO) user).getStudentType().getValue()));
+			System.out.println("未知类别：" + user.getClass());
+			userInfo.add(new Pair("身份", "未知"));
 		}
-		// 准备classesTaken TODO
-		List<TreeNode> classesTaken = new ArrayList<>();
-		// 准备classesQuit
-		List<TreeNode> classesQuit = new ArrayList<>();
-		// 准备scores
-		List<TreeNode> scores = new ArrayList<>();
-		// 准备messages
+		// 装载classesStatistic
+		List<ClassStatisticVO> classesStatistic = classService.getClassStatistics(userId);
+		// 装载messages
 		List<MessagePO> messagePOs = messageService.getAllMessagesByReceiverId(userId);
 		List<MessageVO> messages = new ArrayList<>();
 		for (MessagePO message : messagePOs) {
-			messages.add(new MessageVO(message.getId(), message.getTitle(), message.getSenderId(), message.getTime(), message.getMessage()));
+			String sender = "系统";
+			if (message.getSenderId() != null) {
+				sender = userService.findById(message.getSenderId()).getName();
+			}
+			messages.add(new MessageVO(message.getId(), message.getTitle(), sender, message.getTime(), message.getMessage()));
 		}
-		return new MyInformationVO(Result.SUCCESS, userInfo, classesTaken, classesQuit, scores, messages);
+		return new MyInformationVO(Result.SUCCESS, userInfo, classesStatistic, messages);
 	}
 
 	@ResponseBody
@@ -165,4 +165,97 @@ public class MainController {
 		}
 		return ret;
 	}
+
+	@ResponseBody
+	@RequestMapping(value = "/deleteAccount", method = RequestMethod.POST)
+	public Result deleteAccount(@RequestBody Long userId) {
+		System.out.println("deleteAccount: " + userId);
+		return userService.deleteAccount(userId);
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/addPost", method = RequestMethod.POST)
+	public Map<String, Object> addPost(@RequestBody Map<String, Object> params) {
+		System.out.println("addPost: " + params.toString());
+		Map<String, Object> ret = new HashMap<>();
+		PostVO post = classService.addPost(((Integer) params.get("userId")).longValue(), (String) params.get("title"), (String) params.get("text"));
+		ret.put("result", (post == null ? Result.FAILED : Result.SUCCESS));
+		ret.put("post", post);
+		return ret;
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/uploadCourseware", method = RequestMethod.POST)
+	public Map<String, Object> uploadCourseware(@RequestBody Map<String, Object> params) {
+		System.out.println("uploadCourseware: " + params.toString());
+		Map<String, Object> ret = new HashMap<>();
+//		PostVO post = classService.addPost((Long) params.get("userId"), (String) params.get("title"), (String) params.get("text"));
+//		ret.put("result", (post == null ? Result.FAILED : Result.SUCCESS));
+//		ret.put("post", post);
+		// TODO
+		return ret;
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/addCourse", method = RequestMethod.POST)
+	public Map<String, Object> addCourse(@RequestBody Map<String, Object> params) {
+		System.out.println("addCourse: " + params.toString());
+		Map<String, Object> ret = new HashMap<>();
+		Result result = courseService.createCourse(((Integer) params.get("teacherId")).longValue(),
+				(String) params.get("name"),(Integer) params.get("grade"));
+		ret.put("result", result);
+		return ret;
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/publishClasses", method = RequestMethod.POST)
+	public Map<String, Object> publishClasses(@RequestBody Map<String, Object> params) {
+		System.out.println("publishClasses: " + params.toString());
+		Map<String, Object> ret = new HashMap<>();
+		Long courseId = ((Integer) params.get("courseId")).longValue();
+		LocalDateTime startTime = ZonedDateTime.parse((String) params.get("startTime")).toLocalDateTime();
+		LocalDateTime endTime = ZonedDateTime.parse((String) params.get("endTime")).toLocalDateTime();
+		Result result = classService.publishClasses(courseId, startTime, endTime, (Integer) params.get("classNumber"),
+				(Integer) params.get("term"), (Integer) params.get("maxNumber"));
+		ret.put("result", result);
+		return ret;
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/reviewCourse", method = RequestMethod.POST)
+	public Result reviewCourse(@RequestBody Map<String, Object> params) {
+		System.out.println("reviewCourse: " + params.toString());
+		Long courseId = ((Integer) params.get("courseId")).longValue();
+		boolean pass = ((boolean) params.get("pass"));
+		return courseService.reviewCourse(courseId, pass);
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/reviewClass", method = RequestMethod.POST)
+	public Result reviewClass(@RequestBody Map<String, Object> params) {
+		System.out.println("reviewClass: " + params.toString());
+		Long classId = ((Integer) params.get("classId")).longValue();
+		boolean pass = ((boolean) params.get("pass"));
+		return classService.reviewClass(classId, pass);
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/selectClass", method = RequestMethod.POST)
+	public Result selectClass(@RequestBody Map<String, Object> params) {
+		System.out.println("selectClass: " + params.toString());
+		Long classId = ((Integer) params.get("classId")).longValue();
+		Long studentId = ((Integer) params.get("userId")).longValue();
+		return classService.takeClass(studentId, classId);
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/cancelClassSelection", method = RequestMethod.POST)
+	public Result cancelClassSelection(@RequestBody Map<String, Object> params) {
+		System.out.println("cancelClassSelection: " + params.toString());
+		Long classId = ((Integer) params.get("classId")).longValue();
+		Long studentId = ((Integer) params.get("userId")).longValue();
+		return classService.quitClass(studentId, classId);
+	}
+
+	// TODO /downloadCourseware
 }

@@ -1,8 +1,12 @@
 package dao;
 
+import enums.ClassState;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import po.ClassPO;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 班次Dao
@@ -13,4 +17,7 @@ import po.ClassPO;
  **/
 @Repository
 public interface ClassDao extends JpaRepository<ClassPO, Long> {
+	List<ClassPO> findAllByClassStateAndStartTimeBefore(ClassState classState, LocalDateTime startTime);
+
+	List<ClassPO> findAllByClassState(ClassState classState);
 }
