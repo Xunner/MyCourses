@@ -1,12 +1,15 @@
 package service.impl;
 
 import dao.CourseDao;
+import dao.TeacherDao;
 import enums.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import po.CoursePO;
 import service.CourseService;
+import vo.NewCourseVO;
+import vo.TeacherCourseVO;
 
 import java.util.*;
 
@@ -21,13 +24,15 @@ import java.util.*;
 @Transactional
 public class CourseServiceImpl implements CourseService {
 	private final CourseDao courseDao;
+	private final TeacherDao teacherDao;
 	private final Map<Long, CoursePO> coursesToReviewed = Collections.synchronizedMap(new HashMap<>());
 	private Long id = 0L;
 	private final Boolean lock = true;
 
 	@Autowired
-	public CourseServiceImpl(CourseDao courseDao) {
+	public CourseServiceImpl(CourseDao courseDao, TeacherDao teacherDao) {
 		this.courseDao = courseDao;
+		this.teacherDao = teacherDao;
 	}
 
 	@Override
@@ -61,5 +66,26 @@ public class CourseServiceImpl implements CourseService {
 	@Override
 	public Result uploadCourseware() {
 		return null;
+	}
+
+	@Override
+	public List<TeacherCourseVO> getCourseToReviewByTeacherId(Long teacherId) {
+		List<TeacherCourseVO> ret = new ArrayList<>();
+		this.coursesToReviewed.forEach((id, coursePO) -> {
+			if (coursePO.getTeacherId().equals(teacherId)) {
+				ret.add(new TeacherCourseVO(coursePO.getId(), coursePO.getName(), coursePO.getGrade(), false,
+						new ArrayList<>()));
+			}
+		});
+		return ret;
+	}
+
+	@Override
+	public List<NewCourseVO> getAllCoursesToReview() {
+		List<NewCourseVO> ret = new ArrayList<>();
+		this.coursesToReviewed.forEach((id, course) -> {
+			ret.add(new NewCourseVO(id, course.getGrade(), course.getName(), teacherDao.findOne(course.getTeacherId()).getName()));
+		});
+		return ret;
 	}
 }

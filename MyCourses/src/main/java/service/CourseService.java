@@ -1,6 +1,10 @@
 package service;
 
 import enums.Result;
+import vo.NewCourseVO;
+import vo.TeacherCourseVO;
+
+import java.util.List;
 
 /**
  * 课程服务接口
@@ -18,4 +22,8 @@ public interface CourseService {
 	 * TODO
 	 */
 	Result uploadCourseware();
+
+	List<TeacherCourseVO> getCourseToReviewByTeacherId(Long teacherId);
+
+	List<NewCourseVO> getAllCoursesToReview();
 }

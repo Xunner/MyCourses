@@ -108,9 +108,10 @@ public class MainController {
 	}
 
 	@ResponseBody
-	@RequestMapping(value = "/MyInformation", method = RequestMethod.GET)
-	public MyInformationVO getMyInformation(@RequestParam(value = "userId") Long userId) {
-		System.out.println("MyInformation: " + userId);
+	@RequestMapping(value = "/information", method = RequestMethod.GET)
+	public Map<String, Object> getInformation(@RequestParam(value = "userId") Long userId) {
+		System.out.println("information: " + userId);
+		Map<String, Object> ret = new HashMap<>();
 		// 装载userInfo
 		UserPO user = userService.findById(userId);
 		List<Pair> userInfo = new ArrayList<>();
@@ -119,12 +120,17 @@ public class MainController {
 		if (user instanceof StudentPO) {
 			userInfo.add(new Pair("身份", ((StudentPO) user).getStudentType().getValue()));
 			userInfo.add(new Pair("学号", ((StudentPO) user).getStudentId()));
+			// 装载classesStatistic
+			ret.put("classesStatistic", classService.getClassStatistics(userId));
+		} else if (user instanceof TeacherPO) {
+			userInfo.add(new Pair("身份", "教师"));
+			// 装载 TODO
+
 		} else {
 			System.out.println("未知类别：" + user.getClass());
 			userInfo.add(new Pair("身份", "未知"));
 		}
-		// 装载classesStatistic
-		List<ClassStatisticVO> classesStatistic = classService.getClassStatistics(userId);
+		ret.put("userInfo", userInfo);
 		// 装载messages
 		List<MessagePO> messagePOs = messageService.getAllMessagesByReceiverId(userId);
 		List<MessageVO> messages = new ArrayList<>();
@@ -135,7 +141,9 @@ public class MainController {
 			}
 			messages.add(new MessageVO(message.getId(), message.getTitle(), sender, message.getTime(), message.getMessage()));
 		}
-		return new MyInformationVO(Result.SUCCESS, userInfo, classesStatistic, messages);
+		ret.put("messages", messages);
+		ret.put("result", Result.SUCCESS);
+		return ret;
 	}
 
 	@ResponseBody
@@ -257,5 +265,33 @@ public class MainController {
 		return classService.quitClass(studentId, classId);
 	}
 
+	@ResponseBody
+	@RequestMapping(value = "/review", method = RequestMethod.GET)
+	public Map<String, Object> getReview(@RequestParam(value = "adminId") Long adminId) {
+		return classService.getReview(adminId);
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/statistics", method = RequestMethod.GET)
+	public Map<String, Object> getStatistics(@RequestParam(value = "adminId") Long adminId) {
+		// TODO
+		return null;
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/TeacherCourses", method = RequestMethod.GET)
+	public Map<String, Object> getTeacherCourses(@RequestParam(value = "teacherId") Long teacherId) {
+		Map<String, Object> ret = new HashMap<>();
+		List<TeacherCourseVO> teacherCourseVOS = classService.getTeacherCourses(teacherId);
+		ret.put("teacherCourses", teacherCourseVOS);
+		if (teacherCourseVOS == null) {
+			ret.put("result", Result.NOT_EXIST);
+		} else {
+			ret.put("result", Result.SUCCESS);
+		}
+		return ret;
+	}
+
 	// TODO /downloadCourseware
+	// TODO /downloadSubmission
 }

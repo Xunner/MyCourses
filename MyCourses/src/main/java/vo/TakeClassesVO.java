@@ -1,5 +1,7 @@
 package vo;
 
+import enums.Result;
+
 import java.util.List;
 
 /**
@@ -10,10 +12,12 @@ import java.util.List;
  * @author 巽
  **/
 public class TakeClassesVO {
+	public Result result;
 	public List<ClassToTakeVO> unselectedClass;
 	public List<ClassToTakeVO> selectedClass;
 
-	public TakeClassesVO(List<ClassToTakeVO> unselectedClass, List<ClassToTakeVO> selectedClass) {
+	public TakeClassesVO(Result result, List<ClassToTakeVO> unselectedClass, List<ClassToTakeVO> selectedClass) {
+		this.result = result;
 		this.unselectedClass = unselectedClass;
 		this.selectedClass = selectedClass;
 	}

@@ -5,6 +5,7 @@ import vo.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 选课服务接口
@@ -33,4 +34,8 @@ public interface ClassService {
 	PostVO addPost(Long userId, String title, String text);
 
 	TakeClassesVO getClassesToTake(Long studentId);
+
+	List<TeacherCourseVO> getTeacherCourses(Long teacherId);
+
+	Map<String, Object> getReview(Long adminId);
 }

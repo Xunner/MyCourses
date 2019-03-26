@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import po.*;
 import service.ClassService;
+import service.CourseService;
 import vo.*;
 
 import java.time.LocalDateTime;
@@ -25,6 +26,7 @@ import java.util.*;
 @Service
 @Transactional
 public class ClassServiceImpl implements ClassService {
+	private final CourseService courseService;
 	private final CourseDao courseDao;
 	private final ClassDao classDao;
 	private final UserDao userDao;
@@ -39,7 +41,8 @@ public class ClassServiceImpl implements ClassService {
 	private final Boolean lock = true;
 
 	@Autowired
-	public ClassServiceImpl(CourseDao courseDao, ClassDao classDao, UserDao userDao, StudentDao studentDao, TeacherDao teacherDao, HomeworkDao homeworkDao, LogDao logDao, PostDao postDao, MessageDao messageDao) {
+	public ClassServiceImpl(CourseService courseService, CourseDao courseDao, ClassDao classDao, UserDao userDao, StudentDao studentDao, TeacherDao teacherDao, HomeworkDao homeworkDao, LogDao logDao, PostDao postDao, MessageDao messageDao) {
+		this.courseService = courseService;
 		this.courseDao = courseDao;
 		this.classDao = classDao;
 		this.userDao = userDao;
@@ -221,6 +224,9 @@ public class ClassServiceImpl implements ClassService {
 	@Override
 	public TakeClassesVO getClassesToTake(Long studentId) {
 		StudentPO studentPO = studentDao.findOne(studentId);
+		if (studentPO == null) {
+			return new TakeClassesVO(Result.NOT_EXIST, null, null);
+		}
 		List<ClassPO> classPOS = classDao.findAllByClassState(ClassState.NOT_STARTED);
 		Set<ClassPO> selected = studentPO.getClassScores().keySet();
 		List<ClassToTakeVO> unselectedClass = new ArrayList<>();
@@ -239,7 +245,58 @@ public class ClassServiceImpl implements ClassService {
 						new ClassNumberVO(classPO.getStudentScores().size(), classPO.getMaxNumber())));
 			}
 		}
-		return new TakeClassesVO(unselectedClass, selectedClass);
+		return new TakeClassesVO(Result.SUCCESS, unselectedClass, selectedClass);
+	}
+
+	@Override
+	public List<TeacherCourseVO> getTeacherCourses(Long teacherId) {
+		TeacherPO teacherPO = teacherDao.findOne(teacherId);
+		if (teacherPO == null) {
+			return null;
+		}
+		List<TeacherCourseVO> ret = new ArrayList<>();
+		// 查询审核通过的课
+		List<CoursePO> coursePOS = courseDao.findAllByTeacherId(teacherId);
+		for (CoursePO coursePO : coursePOS) {
+			List<ClassPO> classPOS = classDao.findAllByCourseId(coursePO.getId());
+			List<TeacherClassVO> classes = new ArrayList<>();
+			// 查询审核通过的班
+			for (ClassPO classPO : classPOS) {
+				classes.add(new TeacherClassVO(classPO.getId(), classPO.getTerm(), classPO.getClassOrder(),
+						classPO.getStartTime(), classPO.getEndTime(), true));
+			}
+			// 查询待审核的班
+			this.classesToReviewed.forEach((id, classPO) -> {
+				if (classPO.getCourseId().equals(coursePO.getId())) {
+					classes.add(new TeacherClassVO(id, classPO.getTerm(), classPO.getClassOrder(),
+							classPO.getStartTime(), classPO.getEndTime(), false));
+				}
+			});
+			ret.add(new TeacherCourseVO(coursePO.getId(), coursePO.getName(), coursePO.getGrade(), true, classes));
+		}
+		// 查询待审核的课
+		ret.addAll(courseService.getCourseToReviewByTeacherId(teacherId));
+		return ret;
+	}
+
+	@Override
+	public Map<String, Object> getReview(Long adminId) {
+		Map<String, Object> ret = new HashMap<>();
+		UserPO adminPO = userDao.findOne(adminId);
+		if (adminPO == null) {
+			ret.put("result", Result.NOT_EXIST);
+			return ret;
+		}
+		// 装载待审核课程
+		ret.put("checkNewCourse", courseService.getAllCoursesToReview());
+		// 装载待审核开课
+		List<NewClassVO> classVOS = new ArrayList<>();
+		this.classesToReviewed.forEach((id, classPO) ->
+				classVOS.add(new NewClassVO(id, courseDao.findOne(classPO.getCourseId()).getName(), classPO.getTerm(),
+						classPO.getClassOrder(), classPO.getStartTime(), classPO.getEndTime())));
+		ret.put("checkNewClass", classVOS);
+		ret.put("result", Result.SUCCESS);
+		return ret;
 	}
 
 	@Scheduled(fixedRate = 60000)   // 60秒执行一次

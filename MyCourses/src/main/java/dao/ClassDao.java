@@ -20,4 +20,6 @@ public interface ClassDao extends JpaRepository<ClassPO, Long> {
 	List<ClassPO> findAllByClassStateAndStartTimeBefore(ClassState classState, LocalDateTime startTime);
 
 	List<ClassPO> findAllByClassState(ClassState classState);
+
+	List<ClassPO> findAllByCourseId(Long courseId);
 }
