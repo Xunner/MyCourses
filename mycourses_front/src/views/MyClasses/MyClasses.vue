@@ -47,6 +47,7 @@
                   </template>
                   <div class="left">{{homework.description}}</div>
                   <div class="left">截止日期：{{homework.deadline}}</div>
+                  <el-button @click="downloadSubmission(homework.id)" v-show="homework.submitted">下载作业</el-button>
                   <el-upload :data="userId" action="/MyCourses/submitHomework" :before-upload="beforeHomeworkUpload"
                              :on-success="uploadHomeworkSuccess" v-show="!homework.submitted" style="margin-top: 15px" drag>
                     <i class="el-icon-upload"></i>
@@ -204,6 +205,19 @@ export default {
       } else {
         this.$message.error('网络错误，请刷新或稍后再试')
       }
+    },
+    downloadSubmission (homeworkId) {
+      /* HTTP请求 */
+      this.$http.get('/MyCourses/downloadSubmission', {params: {homeworkId: homeworkId}}).then((res) => {
+        console.log(res.data)
+        if (res.data.result === 'SUCCESS') {
+          this.$message.success('成功')
+        } else {
+          this.$message.error('网络错误，请刷新或稍后再试')
+        }
+      }, () => {
+        this.$message.error('网络错误，请刷新或稍后再试')
+      })
     }
   },
   data () {

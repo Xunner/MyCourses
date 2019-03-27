@@ -9,11 +9,16 @@
         <el-col>
           <el-card v-for="(teacherCourse, i) of teacherCourses" :key="i" class="box-card" v-show="isProfile">
             <div slot="header">{{teacherCourse.name}}
+              <label v-show="!teacherCourse.passReview"> （审核中）</label>
               <el-button style="float: right; padding: 3px 0" type="text" icon="el-icon-plus"
-                         @click="publishClass(teacherCourse.courseId, teacherCourse.name)">发布新课程</el-button></div>
+                         @click="publishClass(teacherCourse.courseId, teacherCourse.name)"
+                         :disabled="!teacherCourse.passReview">发布新课程
+              </el-button>
+            </div>
             <el-button v-for="(teacherClass, i2) of teacherCourse.classes" :key="i2"
-                       @click="clickClass(teacherClass.classId)" class="teacher-class">
+                       @click="clickClass(teacherClass.classId)" class="teacher-class" :disabled="!teacherClass.passReview">
               {{teacherClass.startTime}} 第{{teacherClass.term}}学期 {{teacherClass.classOrder}}班
+              <label v-show="!teacherClass.passReview"> （审核中）</label>
             </el-button>
           </el-card>
         </el-col>
@@ -138,7 +143,7 @@ export default {
   mounted () {
     // if (this.$cookies.isKey('userId')) {
     /* HTTP请求 */
-    this.$http.get('/MyCourses/TeacherCourses', {'params': {'userId': this.$cookies.get('userId')}
+    this.$http.get('/MyCourses/TeacherCourses', {'params': {'teacherId': this.$cookies.get('userId')}
     }).then((res) => {
       if (res.data.result === 'SUCCESS') {
         this.teacherCourses = res.data.teacherCourses
@@ -307,20 +312,23 @@ export default {
           courseId: 1,
           name: '课程1',
           grade: 1,
+          passReview: true,
           classes: [
-            {classId: 1, term: 1, classOrder: 1, startTime: '2019-03-01', endTime: '2019-06-28'},
-            {classId: 2, term: 1, classOrder: 2, startTime: '2019-03-01', endTime: '2019-06-28'},
-            {classId: 3, term: 1, classOrder: 3, startTime: '2019-03-01', endTime: '2019-06-28'}]
+            {classId: 1, term: 1, classOrder: 1, startTime: '2019-03-01', endTime: '2019-06-28', passReview: true},
+            {classId: 2, term: 1, classOrder: 2, startTime: '2019-03-01', endTime: '2019-06-28', passReview: true},
+            {classId: 3, term: 1, classOrder: 3, startTime: '2019-03-01', endTime: '2019-06-28', passReview: false}]
         }, {
           courseId: 2,
           name: '课程2',
           grade: 1,
-          classes: [{classId: 1, term: 1, classOrder: 1, startTime: '2019-03-01', endTime: '2019-06-28'}]
+          passReview: true,
+          classes: [{classId: 1, term: 1, classOrder: 1, startTime: '2019-03-01', endTime: '2019-06-28', passReview: false}]
         }, {
           courseId: 3,
           name: '课程3',
           grade: 2,
-          classes: [{classId: 1, term: 3, classOrder: 1, startTime: '2019-03-01', endTime: '2019-06-28'}]
+          passReview: false,
+          classes: []
         }
       ],
       classInfo: {

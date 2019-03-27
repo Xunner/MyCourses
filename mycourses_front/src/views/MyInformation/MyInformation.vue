@@ -25,7 +25,8 @@
           </el-card>
           <el-card class="box-card" style="width: 37%">
             <div slot="header" class="text">选/退课统计</div>
-            <el-table :data="classesStatistic" :default-sort = "{prop: 'grade', order: 'ascending'}" max-height="450px" stripe>
+            <el-table :data="classesStatistic" :default-sort="{prop: 'grade', order: 'ascending'}" max-height="450px"
+                      :summary-method="getSummaries" show-summary stripe>
               <el-table-column prop="grade" label="年级" sortable></el-table-column>
               <el-table-column prop="term" label="学期" sortable></el-table-column>
               <el-table-column prop="name" label="课名" sortable></el-table-column>
@@ -65,7 +66,8 @@ export default {
   mounted () {
     // if (this.$cookies.isKey('userId')) {
     /* HTTP请求 */
-    this.$http.get('/MyCourses/MyInformation', {'params': {'userId': this.$cookies.get('userId')}}).then((res) => {
+    this.$http.get('/MyCourses/information', {'params': {'userId': this.$cookies.get('userId')}
+    }).then((res) => {
       if (res.data.result === 'SUCCESS') {
         this.userInfo = res.data.userInfo
         this.classesStatistic = res.data.classesStatistic
@@ -92,7 +94,6 @@ export default {
     return {
       name: this.$cookies.get('email'),
       userInfo: [{name: '姓名', value: '未知'}, {name: '身份', value: '未知'}, {name: '邮箱', value: '未知'}, {name: '学号', value: '未知'}],
-      activeNames: [],
       isEditing: false,
       editUserForm: {
         name: '未知',
@@ -101,10 +102,6 @@ export default {
       classesStatistic: [{grade: 1, term: 1, name: '课程1', teacher: '教师1', score: 100, isQuit: false},
         {grade: 1, term: 1, name: '课程2', teacher: '教师2', score: 0, isQuit: true},
         {grade: 2, term: 1, name: '课程3', teacher: '教师3', score: 60, isQuit: false}],
-      defaultProps: {
-        children: 'children',
-        label: 'label'
-      },
       messages: [
         {messageId: '1', title: '标题1', sender: '教师1', time: '2019-03-07 21:18:00', message: '正文'},
         {messageId: '2', title: '标题2', sender: '教师1', time: '2019-03-08 21:18:00', message: '正文2'},
@@ -163,15 +160,19 @@ export default {
         name: this.editUserForm.name,
         studentId: this.editUserForm.studentId
       }).then((res) => {
-        this.userInfo.map(item => {
-          if (item.name === '姓名') {
-            item.value = this.editUserForm.name
-          } else if (item.name === '学号') {
-            item.value = this.editUserForm.studentId
-          }
-          return item
-        })
-        this.isEditing = false
+        if (res.bodyText === 'SUCCESS') {
+          this.userInfo.map(item => {
+            if (item.name === '姓名') {
+              item.value = this.editUserForm.name
+            } else if (item.name === '学号') {
+              item.value = this.editUserForm.studentId
+            }
+            return item
+          })
+          this.isEditing = false
+        } else {
+          this.$message.error('网络错误，请刷新或稍后再试')
+        }
       }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
       })
@@ -202,6 +203,43 @@ export default {
     },
     isQuitFormatter (row) {
       return row.isQuit ? '已退' : '选上'
+    },
+    getSummaries (param) {
+      const {columns, data} = param
+      const sums = []
+      let quit = 0
+      let notQuit = 0
+      for (let item of data) {
+        if (item['isQuit']) {
+          quit++
+        } else {
+          notQuit++
+        }
+      }
+      columns.forEach((column, index) => {
+        if (index === 0) {
+          sums[index] = '绩点'
+        } else if (index === 4) {
+          const values = data.map(item => Number(item[column.property]))
+          if (!values.every(value => isNaN(value))) {
+            sums[index] = values.reduce((prev, curr) => {
+              const value = Number(curr)
+              if (!isNaN(value) && curr > 0) {
+                return prev + curr
+              } else {
+                return prev
+              }
+            }, 0)
+            sums[index] /= (notQuit === 0 ? 1 : notQuit)
+            sums[index] = sums[index].toFixed(2)
+          }
+        } else if (index === 5) {
+          sums[index] = notQuit + ' / ' + quit
+        } else {
+          sums[index] = ''
+        }
+      })
+      return sums
     }
   }
 }

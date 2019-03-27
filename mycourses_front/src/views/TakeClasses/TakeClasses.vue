@@ -61,7 +61,12 @@ export default {
     /* HTTP请求 */
     this.$http.get('/MyCourses/TakeClasses', {'params': {'studentId': this.$cookies.get('userId')}
     }).then((res) => {
-      this.$message.success('success')
+      if (res.data.result === 'SUCCESS') {
+        this.selectedClass = res.data.selectedClass
+        this.unselectedClass = res.data.unselectedClass
+      } else {
+        this.$message.error('网络错误，请刷新或稍后再试')
+      }
     }, () => {
       this.$message.error('网络错误，请刷新或稍后再试')
     })
