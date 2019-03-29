@@ -2,6 +2,7 @@ package service;
 
 import enums.Result;
 import po.MessagePO;
+import vo.NewMessagesVO;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ import java.util.List;
  * @author 巽
  **/
 public interface MessageService {
-	Result sendMessages(Long senderId, List<Long> receiverIds, String title, String message);
+	List<String> sendMessages(NewMessagesVO newMessagesVO);
 
 	Result readMessage(Long messageId);
 

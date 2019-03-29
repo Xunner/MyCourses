@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import po.CoursewarePO;
 
+import java.util.List;
+
 /**
  * 课程Dao
  * <br>
@@ -13,4 +15,5 @@ import po.CoursewarePO;
  **/
 @Repository
 public interface CoursewareDao extends JpaRepository<CoursewarePO, Long> {
+	List<CoursewarePO> findAllByCourseId(Long courseId);
 }

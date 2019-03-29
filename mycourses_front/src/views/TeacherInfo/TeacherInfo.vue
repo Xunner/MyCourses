@@ -1,7 +1,7 @@
 <template>
   <el-container>
     <el-header>
-      <student-nav :name="name"></student-nav>
+      <teacher-nav :name="name"></teacher-nav>
     </el-header>
     <el-main>
       <el-row>
@@ -34,15 +34,43 @@
               </div>
               <div class="message-message">{{item.message}}</div>
               <div class="bottom">
-                <time class="time">{{item.time}}</time>
+                <time class="time" :datetime="item.time">{{item.time[0]}}年{{item.time[1]}}月{{item.time[2]}}日 {{item.time[3]}}:{{item.time[4]}}:{{item.time[5]}}</time>
               </div>
             </el-card>
+            <el-button @click="newMessageDialogVisible = true">写新消息</el-button>
           </el-card>
         </el-col>
         <el-col>
           <el-button @click="deleteAccount">注销账户</el-button>
         </el-col>
       </el-row>
+      <!--弹窗：写新消息-->
+      <el-dialog title="新的消息" :visible.sync="newMessageDialogVisible" width="40%" center>
+        <el-form :model="newMessageForm" label-width="75px" ref="newMessageForm">
+          <el-form-item label="标题" prop="title" :rules="{required: true, message: '标题不能为空', trigger: 'blur'}">
+            <el-input v-model="newMessageForm.title" style="float: left" placeholder="请输入标题"></el-input>
+          </el-form-item>
+          <el-form-item label="群发班级" prop="classes">
+            <el-select v-model="newMessageForm.classes" multiple placeholder="请选择群发班级">
+              <el-option v-for="item in classes" :key="item.classId" :value="item.classId"
+                         :label="item.courseName+' '+item.startTime[0]+'年'+item.startTime[1]+'月'+item.startTime[2]+'日'+' '+item.classOrder+'班'"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item v-for="(user, index) in newMessageForm.users" :label="'收件人' + (index+1)" :key="user.key"
+                        :prop="'users.' + index + '.email'" :rules="{required: true, message: '邮箱不能为空', trigger: 'blur'}">
+            <el-input v-model="user.email" style="width: 90%; margin-right: 10px" placeholder="请输入收件人邮箱"></el-input>
+            <el-button type="danger" icon="el-icon-delete" @click.prevent="removeUser(user)" size="mini" circle></el-button>
+          </el-form-item>
+          <el-form-item label="正文" prop="message" :rules="{required: true, message: '正文不能为空', trigger: 'blur'}">
+            <el-input type="textarea" :autosize="{minRows: 4}" placeholder="请输入正文" v-model="newMessageForm.message"></el-input>
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="newMessageDialogVisible = false">取 消</el-button>
+          <el-button @click="addReceiver">新增收件人</el-button>
+          <el-button type="primary" @click="addMessages('newMessageForm')">确 定</el-button>
+        </div>
+      </el-dialog>
     </el-main>
   </el-container>
 </template>
@@ -51,40 +79,60 @@
 export default {
   name: 'TeacherInfo',
   mounted () {
-    // if (this.$cookies.isKey('userId')) {
-    /* HTTP请求 */
-    this.$http.get('/MyCourses/information', {'params': {'userId': this.$cookies.get('userId')}
-    }).then((res) => {
-      if (res.data.result === 'SUCCESS') {
-        this.userInfo = res.data.userInfo
-        // TODO
-        this.messages = res.data.messages
-        res.data.userInfo.forEach(item => {
-          if (item.name === '姓名') {
-            this.editUserForm.name = item.value
-          }
-        })
-      } else {
+    if (this.$cookies.isKey('userId')) {
+      /* HTTP请求 */
+      this.$http.get('/MyCourses/information', {'params': {'userId': this.$cookies.get('userId')}
+      }).then((res) => {
+        if (res.data.result === 'SUCCESS') {
+          this.userInfo = res.data.userInfo
+          // TODO
+          this.messages = res.data.messages
+          this.classes = res.data.classes
+          res.data.userInfo.forEach(item => {
+            if (item.name === '姓名') {
+              this.editUserForm.name = item.value
+            }
+          })
+        } else {
+          this.$message.error('网络错误，请刷新或稍后再试')
+        }
+      }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
-      }
-    }, () => {
-      this.$message.error('网络错误，请刷新或稍后再试')
-    })
-    // } else {
-    //   /* 如果cookie不存在，则跳转到登录页 */
-    //   this.$router.push('/login')
-    // }
+      })
+    } else {
+      /* 如果cookie不存在，则跳转到登录页 */
+      this.$router.push('/login')
+    }
   },
   data () {
     return {
       name: this.$cookies.get('email'),
+      userId: this.$cookies.get('userId'),
       userInfo: [{name: '姓名', value: '未知'}, {name: '身份', value: '未知'}, {name: '邮箱', value: '未知'}],
       isEditing: false,
       editUserForm: {name: '未知'},
+      newMessageDialogVisible: false,
+      newMessageForm: {
+        title: '',
+        message: '',
+        classes: [],
+        users: []
+      },
+      classes: [{
+        classId: 1,
+        courseName: '课程1',
+        startTime: '2019-03-01',
+        classOrder: 1
+      }, {
+        classId: 2,
+        courseName: '课程1',
+        startTime: '2019-03-01',
+        classOrder: 2
+      }],
       messages: [
-        {messageId: '1', title: '标题1', sender: '教师1', time: '2019-03-07 21:18:00', message: '正文'},
-        {messageId: '2', title: '标题2', sender: '教师1', time: '2019-03-08 21:18:00', message: '正文2'},
-        {messageId: '3', title: '标题3', sender: '教师2', time: '2019-03-09 21:18:00', message: '正文正文正文正文正文正文正文正文正文正文正文正文正文'}
+        {messageId: 1, title: '标题1', sender: '教师1', time: '2019-03-07 21:18:00', message: '正文'},
+        {messageId: 2, title: '标题2', sender: '教师1', time: '2019-03-08 21:18:00', message: '正文2'},
+        {messageId: 3, title: '标题3', sender: '教师2', time: '2019-03-09 21:18:00', message: '正文正文正文正文正文正文正文正文正文正文正文正文正文'}
       ]
     }
   },
@@ -105,10 +153,8 @@ export default {
         this.messages.forEach(value => {
           userIds.push(value.messageId)
         })
-        this.$http.post('/MyCourses/deleteMessages', {
-          userIds: userIds
-        }).then((res) => {
-          if (res.bodyText === 'SUCCESS') {
+        this.$http.post('/MyCourses/deleteMessages', userIds).then((res) => {
+          if (res.data === 'SUCCESS') {
             this.$message.success('成功删除全部消息!')
             this.messages = []
           } else {
@@ -121,11 +167,12 @@ export default {
       })
     },
     deleteMessage (messageId) {
-      this.$http.post('/MyCourses/deleteMessages', {
-        messageIds: [messageId]
-      }).then((res) => {
-        if (res.bodyText === 'SUCCESS') {
-          this.messages.filter(value => value.messageId === messageId)
+      this.$http.post('/MyCourses/deleteMessages', [messageId]).then((res) => {
+        if (res.data === 'SUCCESS') {
+          console.log(this.messages.length)
+          this.messages.filter(value => value.messageId !== messageId)
+          console.log(this.messages.length)
+          this.$message.success('成功删除消息')
         } else {
           this.$message.error('网络错误，请刷新或稍后再试')
         }
@@ -139,7 +186,7 @@ export default {
         name: this.editUserForm.name,
         studentId: ''
       }).then((res) => {
-        if (res.bodyText === 'SUCCESS') {
+        if (res.data === 'SUCCESS') {
           this.userInfo.map(item => {
             if (item.name === '姓名') {
               item.value = this.editUserForm.name
@@ -163,7 +210,7 @@ export default {
         this.$http.post('/MyCourses/deleteAccount', {
           userId: this.$cookies.get('userId')
         }).then((res) => {
-          if (res.bodyText === 'SUCCESS') {
+          if (res.data === 'SUCCESS') {
             this.$message.success('成功永久注销你的账号!')
             /* 退出登录 */
             this.$cookies.remove('userId')
@@ -177,6 +224,55 @@ export default {
         })
       }).catch(() => {
       })
+    },
+    addReceiver () {
+      this.newMessageForm.users.push({email: ''})
+    },
+    addMessages (formName) {
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          if (this.newMessageForm.classes.length === 0 && this.newMessageForm.users.length === 0) {
+            this.$message.error('发送消息至少要选择一个班级或收件人！')
+          } else {
+            this.$http.post('/MyCourses/addMessages', {
+              senderId: this.userId,
+              title: this.newMessageForm.title,
+              message: this.newMessageForm.message,
+              classes: this.newMessageForm.classes,
+              users: this.newMessageForm.users
+            }).then(res => {
+              if (res.data.result === 'SUCCESS') {
+                this.newMessageDialogVisible = false
+                this.$message.success('发送消息成功！')
+              } else if (res.data.result === 'NOT_EXIST') {
+                this.newMessageDialogVisible = false
+                let emails = ''
+                res.data.failedEmails.forEach((email) => {
+                  emails += email + '<br />'
+                })
+                this.$notify({
+                  title: '部分消息发送失败',
+                  message: '以下收件人邮箱不存在，对他们的消息未能成功发出，请再次检查：<br />' + emails,
+                  type: 'warning',
+                  duration: 0
+                })
+              } else {
+                this.$message.error('网络错误，请刷新或稍后再试')
+              }
+            }, () => {
+              this.$message.error('网络错误，请刷新或稍后再试')
+            })
+          }
+        } else {
+          return false
+        }
+      })
+    },
+    removeUser (item) {
+      const index = this.newMessageForm.users.indexOf(item)
+      if (index !== -1) {
+        this.newMessageForm.users.splice(index, 1)
+      }
     }
   }
 }

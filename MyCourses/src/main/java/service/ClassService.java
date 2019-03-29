@@ -31,11 +31,13 @@ public interface ClassService {
 
 	List<ClassStatisticVO> getClassStatistics(Long studentId);
 
-	PostVO addPost(Long userId, String title, String text);
+	List<ClassToMessageVO> getClassesToMessage(Long teacherId);
 
 	TakeClassesVO getClassesToTake(Long studentId);
 
 	List<TeacherCourseVO> getTeacherCourses(Long teacherId);
 
 	Map<String, Object> getReview(Long adminId);
+
+	HomeworkVO publishHomework(HomeworkVO homeworkVO);
 }

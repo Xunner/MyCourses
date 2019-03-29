@@ -20,7 +20,7 @@ export default {
           this.$router.push('/TeacherCourses')
           break
         case 'Admin':
-          this.$message.error('/review')
+          this.$router.push('/review')
           break
         default:
           this.$message.error('网络错误，请刷新或稍后再试')

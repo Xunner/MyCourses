@@ -36,12 +36,14 @@ public class ClassServiceImpl implements ClassService {
 	private final LogDao logDao;
 	private final PostDao postDao;
 	private final MessageDao messageDao;
+	private final CoursewareDao coursewareDao;
+	private final ReplyDao replyDao;
 	private final Map<Long, ClassPO> classesToReviewed = Collections.synchronizedMap(new HashMap<>());
 	private Long id = 0L;
 	private final Boolean lock = true;
 
 	@Autowired
-	public ClassServiceImpl(CourseService courseService, CourseDao courseDao, ClassDao classDao, UserDao userDao, StudentDao studentDao, TeacherDao teacherDao, HomeworkDao homeworkDao, LogDao logDao, PostDao postDao, MessageDao messageDao) {
+	public ClassServiceImpl(CourseService courseService, CourseDao courseDao, ClassDao classDao, UserDao userDao, StudentDao studentDao, TeacherDao teacherDao, HomeworkDao homeworkDao, LogDao logDao, PostDao postDao, MessageDao messageDao, CoursewareDao coursewareDao, ReplyDao replyDao) {
 		this.courseService = courseService;
 		this.courseDao = courseDao;
 		this.classDao = classDao;
@@ -52,6 +54,8 @@ public class ClassServiceImpl implements ClassService {
 		this.logDao = logDao;
 		this.postDao = postDao;
 		this.messageDao = messageDao;
+		this.coursewareDao = coursewareDao;
+		this.replyDao = replyDao;
 	}
 
 	@Override
@@ -94,7 +98,14 @@ public class ClassServiceImpl implements ClassService {
 			Map.Entry<Long, ClassPO> entry = entries.next();
 			if (classId.equals(entry.getKey())) {
 				if (pass) {
-					classDao.save(entry.getValue());
+					ClassPO classPO = classDao.save(entry.getValue());
+					CoursePO coursePO = courseDao.findOne(classPO.getCourseId());
+					messageDao.save(new MessagePO(null, coursePO.getTeacherId(), LocalDateTime.now(),
+							"发布课程审核通过", "您发布的课程《" + coursePO.getName() + "》已通过管理员审核，到开课时间后会自动开课。", true));
+				} else {
+					CoursePO coursePO = courseDao.findOne(entry.getValue().getCourseId());
+					messageDao.save(new MessagePO(null, coursePO.getTeacherId(), LocalDateTime.now(),
+							"发布课程审核未通过", "您发布的课程《" + coursePO.getName() + "》未能通过管理员审核，请与管理员联系了解详情。", true));
 				}
 				entries.remove();
 				System.out.println("完成开班在线审核：" + classId);
@@ -135,7 +146,8 @@ public class ClassServiceImpl implements ClassService {
 	}
 
 	@Override
-	public Result publishHomework(Long classId, String name, String description, LocalDateTime deadline, Integer sizeLimit, String typeRestriction) {
+	public Result publishHomework(Long classId, String name, String description, LocalDateTime deadline,
+	                              Integer sizeLimit, String typeRestriction) {
 		HomeworkPO homeworkPO = new HomeworkPO(classId, name, description, deadline, sizeLimit, typeRestriction);
 		homeworkDao.save(homeworkPO);
 		return Result.SUCCESS;
@@ -162,8 +174,9 @@ public class ClassServiceImpl implements ClassService {
 					break;
 				}
 			}
-			homework.add(new HomeworkVO(homeworkPO.getId(), homeworkPO.getName(), homeworkPO.getDescription(),
-					homeworkPO.getDeadline(), submitted, homeworkPO.getSizeLimit(), homeworkPO.getTypeRestriction()));
+			List<String> typeRestriction = new ArrayList<>(Arrays.asList(homeworkPO.getTypeRestriction().split("/")));
+			homework.add(new HomeworkVO(homeworkPO.getId(), classId, homeworkPO.getName(), homeworkPO.getDescription(),
+					homeworkPO.getDeadline(), submitted, homeworkPO.getSizeLimit(), typeRestriction));
 		}
 		ret.homework = homework;
 		// 装载coursewares
@@ -212,13 +225,14 @@ public class ClassServiceImpl implements ClassService {
 	}
 
 	@Override
-	public PostVO addPost(Long userId, String title, String text) {
-		PostPO postPO = new PostPO(userId, title, text, LocalDateTime.now());
-		postDao.save(postPO);
-		if (postPO.getId() == null) {
-			return null;
+	public List<ClassToMessageVO> getClassesToMessage(Long teacherId) {
+		List<ClassToMessageVO> ret = new ArrayList<>();
+		for (CoursePO coursePO : courseDao.findAllByTeacherId(teacherId)) {
+			classDao.findAllByCourseId(coursePO.getId()).forEach(classPO ->
+					ret.add(new ClassToMessageVO(classPO.getId(), coursePO.getName(), classPO.getStartTime().toLocalDate(),
+							classPO.getClassOrder())));
 		}
-		return new PostVO(postPO.getId(), userDao.findOne(userId).getName(), title, text, postPO.getTime());
+		return ret;
 	}
 
 	@Override
@@ -272,7 +286,25 @@ public class ClassServiceImpl implements ClassService {
 							classPO.getStartTime(), classPO.getEndTime(), false));
 				}
 			});
-			ret.add(new TeacherCourseVO(coursePO.getId(), coursePO.getName(), coursePO.getGrade(), true, classes));
+			// 装载所有帖子
+			List<PostVO> posts = new ArrayList<>();
+			postDao.findAllByCourseId(coursePO.getId()).forEach(postPO ->{
+				PostVO postVO = new PostVO(postPO.getId(), userDao.findOne(postPO.getUserId()).getName(),
+						postPO.getTitle(), postPO.getText(), postPO.getTime());
+				// 装载所有回帖
+				List<ReplyVO> replies = new ArrayList<>();
+				replyDao.findAllByPostId(postPO.getId()).forEach(replyPO ->
+						replies.add(new ReplyVO(replyPO.getId(), userDao.findOne(replyPO.getUserId()).getName(),
+								replyPO.getText(), replyPO.getTime())));
+				postVO.replies = replies;
+				posts.add(postVO);
+			});
+			// 装载所有课件
+			List<CoursewareVO> coursewares = new ArrayList<>();
+			coursewareDao.findAllByCourseId(coursePO.getId()).forEach(coursewarePO ->
+					coursewares.add(new CoursewareVO(coursewarePO.getId(), coursewarePO.getName())));
+			ret.add(new TeacherCourseVO(coursePO.getId(), coursePO.getName(), coursePO.getGrade(), true,
+					posts, coursewares, classes));
 		}
 		// 查询待审核的课
 		ret.addAll(courseService.getCourseToReviewByTeacherId(teacherId));
@@ -297,6 +329,17 @@ public class ClassServiceImpl implements ClassService {
 		ret.put("checkNewClass", classVOS);
 		ret.put("result", Result.SUCCESS);
 		return ret;
+	}
+
+	@Override
+	public HomeworkVO publishHomework(HomeworkVO vo) {
+		StringBuilder sb = new StringBuilder();
+		vo.typeRestriction.forEach(type -> sb.append(type).append('/'));
+		sb.deleteCharAt(sb.length() - 1);
+		HomeworkPO homeworkPO = homeworkDao.save(new HomeworkPO(vo.classId, vo.name, vo.description, vo.deadline,
+				vo.sizeLimit, sb.toString()));
+		vo.id = homeworkPO.getId();
+		return vo;
 	}
 
 	@Scheduled(fixedRate = 60000)   // 60秒执行一次

@@ -57,23 +57,23 @@ export default {
   name: 'TakeClasses',
   mounted () {
     // TODO
-    // if (this.$cookies.isKey('userId')) {
-    /* HTTP请求 */
-    this.$http.get('/MyCourses/TakeClasses', {'params': {'studentId': this.$cookies.get('userId')}
-    }).then((res) => {
-      if (res.data.result === 'SUCCESS') {
-        this.selectedClass = res.data.selectedClass
-        this.unselectedClass = res.data.unselectedClass
-      } else {
+    if (this.$cookies.isKey('userId')) {
+      /* HTTP请求 */
+      this.$http.get('/MyCourses/TakeClasses', {'params': {'studentId': this.$cookies.get('userId')}
+      }).then((res) => {
+        if (res.data.result === 'SUCCESS') {
+          this.selectedClass = res.data.selectedClass
+          this.unselectedClass = res.data.unselectedClass
+        } else {
+          this.$message.error('网络错误，请刷新或稍后再试')
+        }
+      }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
-      }
-    }, () => {
-      this.$message.error('网络错误，请刷新或稍后再试')
-    })
-    // } else {
-    //   /* 如果cookie不存在，则跳转到登录页 */
-    //   this.$router.push('/login')
-    // }
+      })
+    } else {
+      /* 如果cookie不存在，则跳转到登录页 */
+      this.$router.push('/login')
+    }
   },
   methods: {
     clickSelectClass (row) {
@@ -81,7 +81,7 @@ export default {
         classId: row.classId,
         studentId: this.$cookies.get('userId')
       }).then(res => {
-        if (res.bodyText === 'SUCCESS') {
+        if (res.data === 'SUCCESS') {
           this.$message.success('申请选课成功！开课时间到后会自动公布选课结果')
           row.number.current += 1
           this.selectedClass.push(row)
@@ -91,7 +91,7 @@ export default {
               break
             }
           }
-        } else if (res.bodyText === 'FAILED') {
+        } else if (res.data === 'FAILED') {
           this.$message.error('申请选课失败，该课程已经开课且人数已满')
         } else {
           this.$message.error('网络错误，请刷新或稍后再试')
@@ -115,7 +115,7 @@ export default {
         classId: row.classId,
         studentId: this.$cookies.get('userId')
       }).then(res => {
-        if (res.bodyText === 'SUCCESS') {
+        if (res.data === 'SUCCESS') {
           this.$message.success('取消申请选课成功！')
           row.number.current -= 1
           this.unselectedClass.push(row)

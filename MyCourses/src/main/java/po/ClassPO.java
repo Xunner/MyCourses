@@ -7,6 +7,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 开课、班次
@@ -49,10 +50,10 @@ public class ClassPO {
 
 	@OneToMany(targetEntity = HomeworkPO.class, cascade=CascadeType.REMOVE, fetch = FetchType.EAGER)
 	@JoinColumn(name = "class_id")
-	private List<HomeworkPO> homework;
+	private Set<HomeworkPO> homework;
 
 	/** 本班所有学生以及考试成绩 */
-	@ElementCollection
+	@ElementCollection(fetch = FetchType.EAGER)
 	@CollectionTable(name="student_class_score")
 	@MapKeyJoinColumn(name="StudentPO_id")
 	@Column(name="score")

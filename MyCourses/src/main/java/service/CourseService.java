@@ -1,7 +1,10 @@
 package service;
 
 import enums.Result;
+import po.CoursewarePO;
 import vo.NewCourseVO;
+import vo.PostVO;
+import vo.ReplyVO;
 import vo.TeacherCourseVO;
 
 import java.util.List;
@@ -18,12 +21,15 @@ public interface CourseService {
 
 	Result reviewCourse(Long courseId, boolean pass);
 
-	/**
-	 * TODO
-	 */
-	Result uploadCourseware();
+	Long uploadCourseware(Long courseId, String name);
+
+	String getFilePathByCoursewareId(Long coursewareId);
 
 	List<TeacherCourseVO> getCourseToReviewByTeacherId(Long teacherId);
 
 	List<NewCourseVO> getAllCoursesToReview();
+
+	PostVO addPost(Long userId, Long courseId, String title, String text);
+
+	ReplyVO addReply(Long userId, Long postId, String text);
 }

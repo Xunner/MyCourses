@@ -2,7 +2,7 @@ package controller;
 
 import enums.Result;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import po.*;
 import service.ClassService;
@@ -25,7 +25,7 @@ import java.util.Map;
  *
  * @author 巽
  **/
-@Controller
+@RestController
 public class MainController {
 	private final UserService userService;
 	private final CourseService courseService;
@@ -40,7 +40,6 @@ public class MainController {
 		this.messageService = messageService;
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/login", method = RequestMethod.POST)
 	public Map<String, Object> login(@RequestBody LogInVO logInVO) {
 		System.out.println(logInVO);
@@ -56,7 +55,6 @@ public class MainController {
 		return ret;
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/register", method = RequestMethod.POST)
 	public String register(@RequestBody RegisterVO registerVO) {
 		System.out.println(registerVO);
@@ -71,7 +69,6 @@ public class MainController {
 		return Result.FAILED.name();
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/activate/{code}", method = RequestMethod.GET)
 	public String activate(@PathVariable("code") String code) {
 		String result;
@@ -90,7 +87,6 @@ public class MainController {
 				"</h1><h3><a href='http://localhost:8080/MyCourses/'>http://localhost:8080/MyCourses/</a></h3></body></html>";
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/MyClasses", method = RequestMethod.GET)
 	public MyClassesVO getMyClasses(@RequestParam(value = "userId") Long userId) {
 		List<ClassProfile> myClasses = classService.getMyClassProfiles(userId);
@@ -101,13 +97,12 @@ public class MainController {
 		}
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/TakeClasses", method = RequestMethod.GET)
 	public TakeClassesVO getTakeClasses(@RequestParam(value = "studentId") Long studentId) {
 		return classService.getClassesToTake(studentId);
 	}
 
-	@ResponseBody
+	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	@RequestMapping(value = "/information", method = RequestMethod.GET)
 	public Map<String, Object> getInformation(@RequestParam(value = "userId") Long userId) {
 		System.out.println("information: " + userId);
@@ -124,6 +119,7 @@ public class MainController {
 			ret.put("classesStatistic", classService.getClassStatistics(userId));
 		} else if (user instanceof TeacherPO) {
 			userInfo.add(new Pair("身份", "教师"));
+			ret.put("classes", classService.getClassesToMessage(userId));
 			// 装载 TODO
 
 		} else {
@@ -146,21 +142,18 @@ public class MainController {
 		return ret;
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/deleteMessages", method = RequestMethod.POST)
-	public Result deleteMessages(@RequestBody List<Long> userIds) {
-		System.out.println(userIds.toString());
-		return messageService.deleteMessages(userIds);
+	public Result deleteMessages(@RequestBody List<Long> messageIds) {
+		System.out.println(messageIds.toString());
+		return messageService.deleteMessages(messageIds);
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/updateUserInfo", method = RequestMethod.POST)
 	public Result updateUserInfo(@RequestBody UserInfo userInfo) {
 		System.out.println("updateUserInfo: " + userInfo.toString());
 		return userService.updateUserInfo(userInfo.userId, userInfo.name, userInfo.studentId);
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/class", method = RequestMethod.GET)
 	public Map<String, Object> getClass(@RequestParam(value = "userId") Long userId, @RequestParam(value = "classId") Long classId) {
 		Map<String, Object> ret = new HashMap<>();
@@ -174,62 +167,51 @@ public class MainController {
 		return ret;
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/deleteAccount", method = RequestMethod.POST)
 	public Result deleteAccount(@RequestBody Long userId) {
 		System.out.println("deleteAccount: " + userId);
 		return userService.deleteAccount(userId);
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/addPost", method = RequestMethod.POST)
 	public Map<String, Object> addPost(@RequestBody Map<String, Object> params) {
 		System.out.println("addPost: " + params.toString());
 		Map<String, Object> ret = new HashMap<>();
-		PostVO post = classService.addPost(((Integer) params.get("userId")).longValue(), (String) params.get("title"), (String) params.get("text"));
+		PostVO post = courseService.addPost(Long.valueOf((String) params.get("userId")),
+				((Integer) params.get("courseId")).longValue(), (String) params.get("title"), (String) params.get("text"));
 		ret.put("result", (post == null ? Result.FAILED : Result.SUCCESS));
 		ret.put("post", post);
 		return ret;
 	}
 
-	@ResponseBody
-	@RequestMapping(value = "/uploadCourseware", method = RequestMethod.POST)
-	public Map<String, Object> uploadCourseware(@RequestBody Map<String, Object> params) {
-		System.out.println("uploadCourseware: " + params.toString());
+	@RequestMapping(value = "/addReply", method = RequestMethod.POST)
+	public Map<String, Object> addReply(@RequestBody Map<String, Object> params) {
+		System.out.println("addReply: " + params.toString());
 		Map<String, Object> ret = new HashMap<>();
-//		PostVO post = classService.addPost((Long) params.get("userId"), (String) params.get("title"), (String) params.get("text"));
-//		ret.put("result", (post == null ? Result.FAILED : Result.SUCCESS));
-//		ret.put("post", post);
-		// TODO
+		ReplyVO reply = courseService.addReply(Long.valueOf((String) params.get("userId")),
+				((Integer) params.get("postId")).longValue(), (String) params.get("text"));
+		ret.put("result", (reply == null ? Result.FAILED : Result.SUCCESS));
+		ret.put("reply", reply);
 		return ret;
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/addCourse", method = RequestMethod.POST)
-	public Map<String, Object> addCourse(@RequestBody Map<String, Object> params) {
+	public Result addCourse(@RequestBody Map<String, Object> params) {
 		System.out.println("addCourse: " + params.toString());
-		Map<String, Object> ret = new HashMap<>();
-		Result result = courseService.createCourse(((Integer) params.get("teacherId")).longValue(),
-				(String) params.get("name"),(Integer) params.get("grade"));
-		ret.put("result", result);
-		return ret;
+		return courseService.createCourse(Long.valueOf((String) params.get("teacherId")), (String) params.get("name"),
+				(Integer) params.get("grade"));
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/publishClasses", method = RequestMethod.POST)
-	public Map<String, Object> publishClasses(@RequestBody Map<String, Object> params) {
+	public Result publishClasses(@RequestBody Map<String, Object> params) {
 		System.out.println("publishClasses: " + params.toString());
-		Map<String, Object> ret = new HashMap<>();
 		Long courseId = ((Integer) params.get("courseId")).longValue();
 		LocalDateTime startTime = ZonedDateTime.parse((String) params.get("startTime")).toLocalDateTime();
 		LocalDateTime endTime = ZonedDateTime.parse((String) params.get("endTime")).toLocalDateTime();
-		Result result = classService.publishClasses(courseId, startTime, endTime, (Integer) params.get("classNumber"),
+		return classService.publishClasses(courseId, startTime, endTime, (Integer) params.get("classNumber"),
 				(Integer) params.get("term"), (Integer) params.get("maxNumber"));
-		ret.put("result", result);
-		return ret;
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/reviewCourse", method = RequestMethod.POST)
 	public Result reviewCourse(@RequestBody Map<String, Object> params) {
 		System.out.println("reviewCourse: " + params.toString());
@@ -238,7 +220,6 @@ public class MainController {
 		return courseService.reviewCourse(courseId, pass);
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/reviewClass", method = RequestMethod.POST)
 	public Result reviewClass(@RequestBody Map<String, Object> params) {
 		System.out.println("reviewClass: " + params.toString());
@@ -247,7 +228,6 @@ public class MainController {
 		return classService.reviewClass(classId, pass);
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/selectClass", method = RequestMethod.POST)
 	public Result selectClass(@RequestBody Map<String, Object> params) {
 		System.out.println("selectClass: " + params.toString());
@@ -256,7 +236,6 @@ public class MainController {
 		return classService.takeClass(studentId, classId);
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/cancelClassSelection", method = RequestMethod.POST)
 	public Result cancelClassSelection(@RequestBody Map<String, Object> params) {
 		System.out.println("cancelClassSelection: " + params.toString());
@@ -265,33 +244,41 @@ public class MainController {
 		return classService.quitClass(studentId, classId);
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/review", method = RequestMethod.GET)
 	public Map<String, Object> getReview(@RequestParam(value = "adminId") Long adminId) {
 		return classService.getReview(adminId);
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/statistics", method = RequestMethod.GET)
 	public Map<String, Object> getStatistics(@RequestParam(value = "adminId") Long adminId) {
 		// TODO
 		return null;
 	}
 
-	@ResponseBody
 	@RequestMapping(value = "/TeacherCourses", method = RequestMethod.GET)
 	public Map<String, Object> getTeacherCourses(@RequestParam(value = "teacherId") Long teacherId) {
 		Map<String, Object> ret = new HashMap<>();
 		List<TeacherCourseVO> teacherCourseVOS = classService.getTeacherCourses(teacherId);
-		ret.put("teacherCourses", teacherCourseVOS);
 		if (teacherCourseVOS == null) {
 			ret.put("result", Result.NOT_EXIST);
 		} else {
 			ret.put("result", Result.SUCCESS);
+			ret.put("teacherCourses", teacherCourseVOS);
 		}
 		return ret;
 	}
 
-	// TODO /downloadCourseware
-	// TODO /downloadSubmission
+	@RequestMapping(value = "/addMessages", method = RequestMethod.POST)
+	public Map<String, Object> addMessages(@RequestBody NewMessagesVO newMessagesVO) {
+		System.out.println("addMessages: " + newMessagesVO.toString());
+		Map<String, Object> ret = new HashMap<>();
+		List<String> failedEmails = messageService.sendMessages(newMessagesVO);
+		if (failedEmails.isEmpty()) {
+			ret.put("result", Result.SUCCESS);
+		} else {
+			ret.put("failedEmails", failedEmails);
+			ret.put("result", Result.NOT_EXIST);
+		}
+		return ret;
+	}
 }

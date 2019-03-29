@@ -57,11 +57,22 @@
       <version>5.2.5.Final</version>
     </dependency>
     <!--SpringMVC -->
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>servlet-api</artifactId>
+      <version>2.5</version>
+    </dependency>
     <!-- https://mvnrepository.com/artifact/org.springframework/spring-webmvc -->
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-webmvc</artifactId>
       <version>4.3.18.RELEASE</version>
+    </dependency>
+    <!-- 上传模块 https://mvnrepository.com/artifact/commons-fileupload/commons-fileupload -->
+    <dependency>
+      <groupId>commons-fileupload</groupId>
+      <artifactId>commons-fileupload</artifactId>
+      <version>1.4</version>
     </dependency>
     <!-- 数据库连接驱动 -->
     <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
@@ -85,6 +96,11 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
+      <version>2.9.8</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
       <version>2.9.8</version>
     </dependency>
 

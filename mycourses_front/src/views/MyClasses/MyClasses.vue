@@ -96,22 +96,22 @@
 export default {
   name: 'MyClasses',
   mounted () {
-    // if (this.$cookies.isKey('userId')) {
-    /* HTTP请求 */
-    this.$http.get('/MyCourses/MyClasses', {'params': {'userId': this.$cookies.get('userId')}
-    }).then((res) => {
-      if (res.data.result === 'SUCCESS') {
-        this.myClasses = res.data.myClasses
-      } else {
+    if (this.$cookies.isKey('userId')) {
+      /* HTTP请求 */
+      this.$http.get('/MyCourses/MyClasses', {'params': {'userId': this.$cookies.get('userId')}
+      }).then((res) => {
+        if (res.data.result === 'SUCCESS') {
+          this.myClasses = res.data.myClasses
+        } else {
+          this.$message.error('网络错误，请刷新或稍后再试')
+        }
+      }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
-      }
-    }, () => {
-      this.$message.error('网络错误，请刷新或稍后再试')
-    })
-    // } else {
-    //   /* 如果cookie不存在，则跳转到登录页 */
-    //   this.$router.push('/login')
-    // }
+      })
+    } else {
+      /* 如果cookie不存在，则跳转到登录页 */
+      this.$router.push('/login')
+    }
   },
   methods: {
     clickClass (classId) {

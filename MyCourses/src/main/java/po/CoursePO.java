@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.persistence.*;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 课程
@@ -28,13 +29,13 @@ public class CoursePO {
 	/** 本课属于几年级的课程，默认从1开始 */
 	private Integer grade;
 
-	@OneToMany(targetEntity = CoursewarePO.class, cascade=CascadeType.REMOVE, fetch = FetchType.LAZY)
+	@OneToMany(targetEntity = CoursewarePO.class, cascade=CascadeType.REMOVE, fetch = FetchType.EAGER)
 	@JoinColumn(name = "course_id")
-	private List<CoursewarePO> coursewares;
+	private Set<CoursewarePO> coursewares;
 
 	@OneToMany(targetEntity = PostPO.class, cascade=CascadeType.REMOVE, fetch = FetchType.EAGER)
 	@JoinColumn(name = "course_id")
-	private List<PostPO> posts;
+	private Set<PostPO> posts;
 
 	public CoursePO() {
 	}

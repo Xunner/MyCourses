@@ -64,31 +64,31 @@
 export default {
   name: 'MyInformation',
   mounted () {
-    // if (this.$cookies.isKey('userId')) {
-    /* HTTP请求 */
-    this.$http.get('/MyCourses/information', {'params': {'userId': this.$cookies.get('userId')}
-    }).then((res) => {
-      if (res.data.result === 'SUCCESS') {
-        this.userInfo = res.data.userInfo
-        this.classesStatistic = res.data.classesStatistic
-        this.messages = res.data.messages
-        res.data.userInfo.forEach(item => {
-          if (item.name === '姓名') {
-            this.editUserForm.name = item.value
-          } else if (item.name === '学号') {
-            this.editUserForm.studentId = item.value
-          }
-        })
-      } else {
+    if (this.$cookies.isKey('userId')) {
+      /* HTTP请求 */
+      this.$http.get('/MyCourses/information', {'params': {'userId': this.$cookies.get('userId')}
+      }).then((res) => {
+        if (res.data.result === 'SUCCESS') {
+          this.userInfo = res.data.userInfo
+          this.classesStatistic = res.data.classesStatistic
+          this.messages = res.data.messages
+          res.data.userInfo.forEach(item => {
+            if (item.name === '姓名') {
+              this.editUserForm.name = item.value
+            } else if (item.name === '学号') {
+              this.editUserForm.studentId = item.value
+            }
+          })
+        } else {
+          this.$message.error('网络错误，请刷新或稍后再试')
+        }
+      }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
-      }
-    }, () => {
-      this.$message.error('网络错误，请刷新或稍后再试')
-    })
-    // } else {
-    //   /* 如果cookie不存在，则跳转到登录页 */
-    //   this.$router.push('/login')
-    // }
+      })
+    } else {
+      /* 如果cookie不存在，则跳转到登录页 */
+      this.$router.push('/login')
+    }
   },
   data () {
     return {
@@ -129,7 +129,7 @@ export default {
         this.$http.post('/MyCourses/deleteMessages', {
           userIds: userIds
         }).then((res) => {
-          if (res.bodyText === 'SUCCESS') {
+          if (res.data === 'SUCCESS') {
             this.$message.success('成功删除全部消息!')
             this.messages = []
           } else {
@@ -145,8 +145,8 @@ export default {
       this.$http.post('/MyCourses/deleteMessages', {
         messageIds: [messageId]
       }).then((res) => {
-        if (res.bodyText === 'SUCCESS') {
-          this.messages.filter(value => value.messageId === messageId)
+        if (res.data === 'SUCCESS') {
+          this.messages.filter(value => value.messageId !== messageId)
         } else {
           this.$message.error('网络错误，请刷新或稍后再试')
         }
@@ -160,7 +160,7 @@ export default {
         name: this.editUserForm.name,
         studentId: this.editUserForm.studentId
       }).then((res) => {
-        if (res.bodyText === 'SUCCESS') {
+        if (res.data === 'SUCCESS') {
           this.userInfo.map(item => {
             if (item.name === '姓名') {
               item.value = this.editUserForm.name
@@ -186,7 +186,7 @@ export default {
         this.$http.post('/MyCourses/deleteAccount', {
           userId: this.$cookies.get('userId')
         }).then((res) => {
-          if (res.bodyText === 'SUCCESS') {
+          if (res.data === 'SUCCESS') {
             this.$message.success('成功永久注销你的账号!')
             /* 退出登录 */
             this.$cookies.remove('userId')

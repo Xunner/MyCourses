@@ -43,22 +43,22 @@
 export default {
   name: 'admin',
   mounted () {
-    // if (this.$cookies.isKey('userId')) {
-    /* HTTP请求 */
-    this.$http.get('/MyCourses/review', {'params': {'adminId': this.$cookies.get('userId')}}).then((res) => {
-      if (res.data.result === 'SUCCESS') {
-        this.checkNewCourse = res.data.checkNewCourse
-        this.checkNewClass = res.data.checkNewClass
-      } else {
+    if (this.$cookies.isKey('userId')) {
+      /* HTTP请求 */
+      this.$http.get('/MyCourses/review', {'params': {'adminId': this.$cookies.get('userId')}}).then((res) => {
+        if (res.data.result === 'SUCCESS') {
+          this.checkNewCourse = res.data.checkNewCourse
+          this.checkNewClass = res.data.checkNewClass
+        } else {
+          this.$message.error('网络错误，请刷新或稍后再试')
+        }
+      }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
-      }
-    }, () => {
-      this.$message.error('网络错误，请刷新或稍后再试')
-    })
-    // } else {
-    //   /* 如果cookie不存在，则跳转到登录页 */
-    //   this.$router.push('/login')
-    // }
+      })
+    } else {
+      /* 如果cookie不存在，则跳转到登录页 */
+      this.$router.push('/login')
+    }
   },
   data () {
     return {
@@ -75,7 +75,7 @@ export default {
   methods: {
     clickPassCourse (index, row) {
       this.$http.post('/MyCourses/reviewCourse', {courseId: row.courseId, pass: true}).then(res => {
-        if (res.bodyText === 'SUCCESS') {
+        if (res.data === 'SUCCESS') {
           this.$message.success('审批成功！')
           this.checkNewCourse.splice(index, 1)
         } else {
@@ -87,7 +87,7 @@ export default {
     },
     clickRejectCourse (index, row) {
       this.$http.post('/MyCourses/reviewCourse', {courseId: row.courseId, pass: false}).then(res => {
-        if (res.bodyText === 'SUCCESS') {
+        if (res.data === 'SUCCESS') {
           this.$message.success('拒绝成功！')
           this.checkNewCourse.splice(index, 1)
         } else {
@@ -99,7 +99,7 @@ export default {
     },
     clickPassClass (index, row) {
       this.$http.post('/MyCourses/reviewClass', {classId: row.classId, pass: true}).then(res => {
-        if (res.bodyText === 'SUCCESS') {
+        if (res.data === 'SUCCESS') {
           this.$message.success('审批成功！')
           this.checkNewClass.splice(index, 1)
         } else {
@@ -111,7 +111,7 @@ export default {
     },
     clickRejectClass (index, row) {
       this.$http.post('/MyCourses/reviewClass', {classId: row.classId, pass: false}).then(res => {
-        if (res.bodyText === 'SUCCESS') {
+        if (res.data === 'SUCCESS') {
           this.$message.success('拒绝成功！')
           this.checkNewClass.splice(index, 1)
         } else {

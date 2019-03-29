@@ -96,9 +96,9 @@ export default {
             'studentId': this.registerForm.studentId
           }
           this.$http.post('/MyCourses/register', data).then((res) => {
-            if (res.bodyText === 'EXIST') {
+            if (res.data === 'EXIST') {
               this.$message.warning('该邮箱已被注册')
-            } else if (res.bodyText === 'SUCCESS') {
+            } else if (res.data === 'SUCCESS') {
               this.$message.success('注册成功')
               // ↓this可能出事！
               this.$refs[formName].resetFields()
@@ -107,7 +107,7 @@ export default {
               this.showLogin = true
             } else {
               this.$message.error('网络错误，请刷新或稍后再试')
-              console.log('未知错误：' + res.bodyText)
+              console.log('未知错误：' + res.data)
             }
           }, () => {
             this.$message.error('网络错误，请刷新或稍后再试')

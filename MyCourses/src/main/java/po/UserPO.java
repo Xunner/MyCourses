@@ -3,6 +3,7 @@ package po;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.util.Objects;
 
 /**
  * 用户
@@ -35,7 +36,16 @@ public class UserPO {
 		this.deleted = deleted;
 	}
 
-//	public Class<? extends UserPO> getClass(){
-//
-//	}
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		UserPO userPO = (UserPO) o;
+		return Objects.equals(getId(), userPO.getId());
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getId());
+	}
 }

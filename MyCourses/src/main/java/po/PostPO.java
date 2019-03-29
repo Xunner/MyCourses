@@ -24,21 +24,25 @@ public class PostPO {
 	@Column(name = "user_id")
 	private Long userId;
 
+	@Column(name = "course_id")
+	private Long courseId;
+
 	private String title;
 
 	private String text;
 
 	private LocalDateTime time;
 
-	@OneToMany(targetEntity = ReplyPO.class, cascade=CascadeType.REMOVE, fetch = FetchType.LAZY)
+	@OneToMany(targetEntity = ReplyPO.class, cascade=CascadeType.REMOVE, fetch = FetchType.EAGER)
 	@JoinColumn(name = "post_id")
 	private List<ReplyPO> replies;
 
 	public PostPO() {
 	}
 
-	public PostPO(Long userId, String title, String text, LocalDateTime time) {
+	public PostPO(Long userId, Long courseId, String title, String text, LocalDateTime time) {
 		this.userId = userId;
+		this.courseId = courseId;
 		this.title = title;
 		this.text = text;
 		this.time = time;

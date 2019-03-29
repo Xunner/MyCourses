@@ -23,4 +23,12 @@ public class CoursewarePO {
 	private Long courseId;
 
 	private String name;
+
+	public CoursewarePO() {
+	}
+
+	public CoursewarePO(Long courseId, String name) {
+		this.courseId = courseId;
+		this.name = name;
+	}
 }

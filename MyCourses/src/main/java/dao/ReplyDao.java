@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import po.ReplyPO;
 
+import java.util.List;
+
 /**
  * 回帖Dao
  * <br>
@@ -13,4 +15,5 @@ import po.ReplyPO;
  **/
 @Repository
 public interface ReplyDao extends JpaRepository<ReplyPO, Long> {
+	List<ReplyPO> findAllByPostId(Long postId);
 }

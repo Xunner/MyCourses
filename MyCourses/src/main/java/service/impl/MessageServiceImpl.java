@@ -1,15 +1,20 @@
 package service.impl;
 
+import dao.ClassDao;
 import dao.MessageDao;
+import dao.UserDao;
 import enums.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import po.ClassPO;
 import po.MessagePO;
+import po.UserPO;
 import service.MessageService;
+import vo.NewMessagesVO;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 
 /**
  * 消息服务实现类
@@ -22,18 +27,40 @@ import java.util.List;
 @Transactional
 public class MessageServiceImpl implements MessageService {
 	private final MessageDao messageDao;
+	private final ClassDao classDao;
+	private final UserDao userDao;
 
 	@Autowired
-	public MessageServiceImpl(MessageDao messageDao) {
+	public MessageServiceImpl(MessageDao messageDao, ClassDao classDao, UserDao userDao) {
 		this.messageDao = messageDao;
+		this.classDao = classDao;
+		this.userDao = userDao;
 	}
 
 	@Override
-	public Result sendMessages(Long senderId, List<Long> receiverIds, String title, String message) {
-		for (Long receiverId : receiverIds) {
-			messageDao.save(new MessagePO(senderId, receiverId, LocalDateTime.now(), title, message, true));
+	public List<String> sendMessages(NewMessagesVO newMessagesVO) {
+		List<String> failedEmails = new ArrayList<>();
+		Set<UserPO> receivers = new HashSet<>();
+		// 把所有选中班级的学生加入收件人集合里
+		for (Long classId : newMessagesVO.classes) {
+			ClassPO classPO = classDao.findOne(classId);
+			receivers.addAll(classPO.getStudentScores().keySet());
 		}
-		return Result.SUCCESS;
+		// 把所有单列的用户加入收件人集合里
+		for (Map<String, String> email : newMessagesVO.users) {
+			UserPO userPO = userDao.findByEmailAndDeletedFalse(email.get("email"));
+			if (userPO == null) {
+				failedEmails.add(email.get("email"));
+			} else {
+				receivers.add(userPO);
+			}
+		}
+		// 遍历收件人集合发消息
+		for (UserPO userPO : receivers) {
+			messageDao.save(new MessagePO(newMessagesVO.senderId, userPO.getId(), LocalDateTime.now(),
+					newMessagesVO.title, newMessagesVO.message, true));
+		}
+		return failedEmails;
 	}
 
 	@Override

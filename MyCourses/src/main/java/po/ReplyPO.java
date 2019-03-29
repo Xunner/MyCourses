@@ -29,4 +29,14 @@ public class ReplyPO {
 	private String text;
 
 	private LocalDateTime time;
+
+	public ReplyPO() {
+	}
+
+	public ReplyPO(Long userId, Long postId, String text, LocalDateTime time) {
+		this.userId = userId;
+		this.postId = postId;
+		this.text = text;
+		this.time = time;
+	}
 }
