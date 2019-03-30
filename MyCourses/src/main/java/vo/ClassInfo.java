@@ -19,11 +19,12 @@ public class ClassInfo {
 	public Integer classOrder;
 	public LocalDateTime startTime;
 	public LocalDateTime endTime;
+	public Integer number;
 	public List<CoursewareVO> coursewares;
 	public List<HomeworkVO> homework;
 	public List<PostVO> posts;
 
-	public ClassInfo(Long id, String name, String teacherName, Integer grade, Integer term, Integer classOrder, LocalDateTime startTime, LocalDateTime endTime) {
+	public ClassInfo(Long id, String name, String teacherName, Integer grade, Integer term, Integer classOrder, LocalDateTime startTime, LocalDateTime endTime, Integer number) {
 		this.id = id;
 		this.name = name;
 		this.teacherName = teacherName;
@@ -32,6 +33,7 @@ public class ClassInfo {
 		this.classOrder = classOrder;
 		this.startTime = startTime;
 		this.endTime = endTime;
+		this.number = number;
 	}
 
 }

@@ -6,6 +6,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * （老师发布的）作业
@@ -39,12 +40,12 @@ public class HomeworkPO {
 	@Column(name = "type_restriction")
 	private String typeRestriction;
 
-	@OneToMany(targetEntity = SubmissionPO.class, cascade=CascadeType.REMOVE, fetch = FetchType.LAZY)
+	@OneToMany(targetEntity = SubmissionPO.class, cascade=CascadeType.REMOVE, fetch = FetchType.EAGER)
 	@JoinColumn(name = "homework_id")
-	private List<SubmissionPO> submissions;
+	private Set<SubmissionPO> submissions;
 
 	/** 本作业所有学生及其成绩 */
-	@ElementCollection
+	@ElementCollection(fetch = FetchType.EAGER)
 	@CollectionTable(name="student_homework_score")
 	@MapKeyJoinColumn(name="student_id")
 	@Column(name="score")

@@ -1,6 +1,7 @@
 package vo;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 作业VO
@@ -11,15 +12,21 @@ import java.time.LocalDateTime;
  **/
 public class HomeworkVO {
 	public Long id;
+	public Long classId;
 	public String name;
 	public String description;
 	public LocalDateTime deadline;
 	public boolean submitted;
 	public Integer sizeLimit;
-	public String typeRestriction;
+	public List<String> typeRestriction;
 
-	public HomeworkVO(Long id, String name, String description, LocalDateTime deadline, boolean submitted, Integer sizeLimit, String typeRestriction) {
+	public HomeworkVO() {
+	}
+
+	public HomeworkVO(Long id, Long classId, String name, String description, LocalDateTime deadline, boolean submitted,
+	                  Integer sizeLimit, List<String> typeRestriction) {
 		this.id = id;
+		this.classId = classId;
 		this.name = name;
 		this.description = description;
 		this.deadline = deadline;

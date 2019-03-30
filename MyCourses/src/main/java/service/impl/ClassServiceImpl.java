@@ -163,7 +163,8 @@ public class ClassServiceImpl implements ClassService {
 		CoursePO coursePO = courseDao.findOne(classPO.getCourseId());
 		TeacherPO teacherPO = teacherDao.findOne(coursePO.getTeacherId());
 		ClassInfo ret = new ClassInfo(classPO.getId(), coursePO.getName(), teacherPO.getName(), coursePO.getGrade(),
-				classPO.getTerm(), classPO.getClassOrder(), classPO.getStartTime(), classPO.getEndTime());
+				classPO.getTerm(), classPO.getClassOrder(), classPO.getStartTime(), classPO.getEndTime(),
+				classPO.getStudentScores().size());
 		// 装载homework
 		List<HomeworkVO> homework = new ArrayList<>();
 		for (HomeworkPO homeworkPO : classPO.getHomework()) {
