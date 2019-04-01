@@ -14,9 +14,9 @@
               <el-table-column prop="grade" label="年级" sortable></el-table-column>
               <el-table-column prop="term" label="学期" sortable></el-table-column>
               <el-table-column prop="classOrder" label="班级" sortable></el-table-column>
-              <el-table-column prop="startTime" label="开课时间" sortable></el-table-column>
-              <el-table-column prop="endTime" label="结课时间" sortable></el-table-column>
-              <el-table-column prop="number" label="已选/限额" sortable :formatter="numberFormatter"></el-table-column>
+              <el-table-column prop="startTime" label="开课时间" :formatter="dateFormatter" sortable></el-table-column>
+              <el-table-column prop="endTime" label="结课时间" :formatter="dateFormatter" sortable></el-table-column>
+              <el-table-column prop="number" label="已选/限额" :formatter="numberFormatter" sortable></el-table-column>
               <el-table-column label="操作">
                 <template slot-scope="scope">
                   <el-button size="mini" type="primary" @click.native.prevent="clickSelectClass(scope.row)">选课</el-button>
@@ -36,9 +36,9 @@
               <el-table-column prop="grade" label="年级" sortable></el-table-column>
               <el-table-column prop="term" label="学期" sortable></el-table-column>
               <el-table-column prop="classOrder" label="班级" sortable></el-table-column>
-              <el-table-column prop="startTime" label="开课时间" sortable></el-table-column>
-              <el-table-column prop="endTime" label="结课时间" sortable></el-table-column>
-              <el-table-column prop="number" label="已选/限额" sortable :formatter="numberFormatter"></el-table-column>
+              <el-table-column prop="startTime" label="开课时间" :formatter="dateFormatter" sortable></el-table-column>
+              <el-table-column prop="endTime" label="结课时间" :formatter="dateFormatter" sortable></el-table-column>
+              <el-table-column prop="number" label="已选/限额" :formatter="numberFormatter" sortable></el-table-column>
               <el-table-column label="操作">
                 <template slot-scope="scope">
                   <el-button size="mini" type="primary" @click.native.prevent="clickCancelClassSelection(scope.row)">退选</el-button>
@@ -56,7 +56,6 @@
 export default {
   name: 'TakeClasses',
   mounted () {
-    // TODO
     if (this.$cookies.isKey('userId')) {
       /* HTTP请求 */
       this.$http.get('/MyCourses/TakeClasses', {'params': {'studentId': this.$cookies.get('userId')}
@@ -98,52 +97,41 @@ export default {
         }
       }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
-
-        // console.log(row)
-        // row.number.current += 1
-        // this.selectedClass.push(row)
-        // for (let i = 0; i < this.unselectedClass.length; i++) {
-        //   if (this.unselectedClass[i].classId === row.classId) {
-        //     this.unselectedClass.splice(i, 1)
-        //     break
-        //   }
-        // }
       })
     },
     clickCancelClassSelection (row) {
-      this.$http.post('/MyCourses/cancelClassSelection', {
-        classId: row.classId,
-        studentId: this.$cookies.get('userId')
-      }).then(res => {
-        if (res.data === 'SUCCESS') {
-          this.$message.success('取消申请选课成功！')
-          row.number.current -= 1
-          this.unselectedClass.push(row)
-          for (let i = 0; i < this.selectedClass.length; i++) {
-            if (this.selectedClass[i].classId === row.classId) {
-              this.selectedClass.splice(i, 1)
-              break
+      this.$confirm('是否确定退选该课程?', '确认', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$http.post('/MyCourses/cancelClassSelection', {
+          classId: row.classId,
+          studentId: this.$cookies.get('userId')
+        }).then(res => {
+          if (res.data === 'SUCCESS') {
+            this.$message.success('取消申请选课成功！')
+            row.number.current -= 1
+            this.unselectedClass.push(row)
+            for (let i = 0; i < this.selectedClass.length; i++) {
+              if (this.selectedClass[i].classId === row.classId) {
+                this.selectedClass.splice(i, 1)
+                break
+              }
             }
+          } else {
+            this.$message.error('网络错误，请刷新或稍后再试')
           }
-        } else {
+        }, () => {
           this.$message.error('网络错误，请刷新或稍后再试')
-        }
-      }, () => {
-        this.$message.error('网络错误，请刷新或稍后再试')
-
-        // console.log(row)
-        // row.number.current -= 1
-        // this.unselectedClass.push(row)
-        // for (let i = 0; i < this.selectedClass.length; i++) {
-        //   if (this.selectedClass[i].classId === row.classId) {
-        //     this.selectedClass.splice(i, 1)
-        //     break
-        //   }
-        // }
-      })
+        })
+      }).catch(() => {})
     },
     numberFormatter (row) {
       return row.number.current + ' / ' + row.number.max
+    },
+    dateFormatter (row) {
+      return row.startTime.slice(0, 3).join('-')
     }
   },
   data () {
@@ -156,8 +144,8 @@ export default {
         grade: 1,
         term: 1,
         classOrder: 1,
-        startTime: '2019-03-01',
-        endTime: '2019-06-30',
+        startTime: [2019, 3, 1],
+        endTime: [2019, 6, 30],
         number: {current: 88, max: 90}
       }, {
         classId: 2,
@@ -166,8 +154,8 @@ export default {
         grade: 2,
         term: 1,
         classOrder: 1,
-        startTime: '2019-03-01',
-        endTime: '2019-06-30',
+        startTime: [2019, 3, 1],
+        endTime: [2019, 6, 30],
         number: {current: 37, max: 100}
       }],
       selectedClass: [{
@@ -177,8 +165,8 @@ export default {
         grade: 2,
         term: 1,
         classOrder: 1,
-        startTime: '2019-03-01',
-        endTime: '2019-06-30',
+        startTime: [2019, 3, 1],
+        endTime: [2019, 6, 30],
         number: {current: 201, max: 250}
       }]
     }

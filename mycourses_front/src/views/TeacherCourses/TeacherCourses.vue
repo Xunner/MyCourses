@@ -40,7 +40,7 @@
                   <div slot="header" style="text-align: left">论坛</div>
                   <el-collapse v-model="activePostId">
                     <el-collapse-item v-for="(post, i) of teacherCourse.posts" :key="i" :name="post.id">
-                      <template slot="title">标题：{{post.title}}&nbsp;&nbsp;({{post.time[0]}}年{{post.time[1]}}月{{post.time[2]}}日 {{post.time[3]}}:{{post.time[4]}}:{{post.time[5]}})</template>
+                      <template slot="title">标题：{{post.title}}&nbsp;&nbsp;({{dateTime(post.time)}})</template>
                       <el-card style="margin: 5px 5px">
                         <el-button style="float: right; padding: 2px 0" type="text" icon="el-icon-plus"
                                    @click="newReplyDialogVisible = true
@@ -50,7 +50,7 @@
                         <div class="left">{{post.text}}</div>
                       </el-card>
                       <el-card v-for="(reply, i2) of post.replies" :key="i2" class="class-info-card">
-                        <div class="left">由 {{reply.replies}} 于 {{reply.time[0]}}年{{reply.time[1]}}月{{reply.time[2]}}日 {{reply.time[3]}}:{{reply.time[4]}}:{{reply.time[5]}} 回帖：</div>
+                        <div class="left">由 {{reply.replies}} 于 {{dateTime(reply.time)}} 回帖：</div>
                         <div class="left">{{reply.text}}</div>
                       </el-card>
                     </el-collapse-item>
@@ -145,8 +145,32 @@
               <div class="left">班级：{{classInfo.classOrder}}班</div>
               <div class="left">开课时间：{{classInfo.startTime[0]}}年{{classInfo.startTime[1]}}月{{classInfo.startTime[2]}}日</div>
               <div class="left">结课时间：{{classInfo.endTime[0]}}年{{classInfo.endTime[1]}}月{{classInfo.endTime[2]}}日</div>
+              <div class="left">学生人数：{{classInfo.number}}</div>
+              <div class="left" v-if="classInfo.publishMethod === 'NOT_YET'">成绩：未公布</div>
+              <div class="left" v-else>成绩：已公布
+                <i v-if="classInfo.publishMethod === 'ONLY_FOR_ME'">（仅可查看本人）</i>
+                <i v-else-if="classInfo.publishMethod === 'FULLY_OPEN'">（完全公开）</i>
+              </div>
             </el-card>
             <el-button @click="toProfile">返回</el-button>
+            <el-button @click="clickEditScores()">编辑成绩</el-button>
+            <!--弹窗：编辑成绩-->
+            <el-dialog title="编辑成绩" :visible.sync="editScoresVisible" style="text-align: center" center>
+              <el-table :data="editClassScore.scores" max-height="450px" :default-sort="{prop: 'studentId', order: 'ascending'}" stripe>
+                <el-table-column property="studentId" label="学号" sortable></el-table-column>
+                <el-table-column property="score" label="成绩" sortable></el-table-column>
+              </el-table>
+              <el-radio-group v-model="editClassScore.publishMethod">
+                <el-radio :label="'FULLY_OPEN'">完全公开</el-radio>
+                <el-radio :label="'ONLY_FOR_ME'">仅可查看本人</el-radio>
+              </el-radio-group>
+              <el-upload :auto-upload="false" ref="classExcel" action="http://jsonplaceholder.typicode.com/posts"
+                         :on-change="clickUploadExcel" :show-file-list="false" accept=".xls,.xlsx" :limit="1"
+                         style="margin-top: 16px; margin-left: 35%; float: left;">
+                <el-button slot="trigger">导入Excel</el-button>
+              </el-upload>
+              <el-button style="margin-top: 16px; margin-left: 16px" type="primary" @click="clickUpdateScores()">发布成绩</el-button>
+            </el-dialog>
           </el-col>
           <el-col :span="12">
             <el-card class="class-info-card">
@@ -155,14 +179,39 @@
                 <el-collapse-item v-for="(homework, i) of classInfo.homework" :key="i" :name="homework.id">
                   <template slot="title">{{homework.name}}</template>
                   <div class="left">{{homework.description}}</div>
-                  <div class="left">截止日期：{{homework.deadline[0]}}年{{homework.deadline[1]}}月{{homework.deadline[2]}}日 {{homework.deadline[3]}}:{{homework.deadline[4]}}:{{homework.deadline[5]}}</div>
+                  <div class="left">截止日期：{{dateTime(homework.deadline)}}</div>
+                  <div class="left">已提交人数：{{homework.numberSubmitted}}</div>
+                  <div class="left" v-if="homework.publishMethod === 'NOT_YET'">成绩：未公布</div>
+                  <div class="left" v-else>成绩：已公布
+                    <i v-if="homework.publishMethod === 'ONLY_FOR_ME'">（仅可查看本人）</i>
+                    <i v-else-if="homework.publishMethod === 'FULLY_OPEN'">（完全公开）</i>
+                  </div>
+                  <el-button style="margin-top: 16px" @click="clickEditHwScores(homework.id, homework.publishMethod)">编辑作业成绩</el-button>
+                  <el-button style="margin-top: 16px" @click="clickDownloadSubmissions(homework.id)">下载学生作业</el-button>
                 </el-collapse-item>
               </el-collapse>
               <el-button style="margin-top: 16px" @click="newHomeworkVisible = true">发布新作业</el-button>
             </el-card>
           </el-col>
         </el-row>
-        <!--弹窗：发布作业-->
+        <!--弹窗：编辑作业成绩-->
+        <el-dialog title="编辑作业成绩" :visible.sync="editHwScoresVisible" style="text-align: center" center>
+          <el-table :data="editHomework.homeworkScores" max-height="450px" :default-sort="{prop: 'studentId', order: 'ascending'}" stripe>
+            <el-table-column property="studentId" label="学号" sortable></el-table-column>
+            <el-table-column property="score" label="成绩" sortable></el-table-column>
+          </el-table>
+          <el-radio-group v-model="editHomework.publishMethod">
+            <el-radio :label="'FULLY_OPEN'">完全公开</el-radio>
+            <el-radio :label="'ONLY_FOR_ME'">仅可查看本人</el-radio>
+          </el-radio-group>
+          <el-upload :auto-upload="false" ref="homeworkExcel" action="http://jsonplaceholder.typicode.com/posts"
+                     :on-change="clickUploadHwExcel" :show-file-list="false" accept=".xls,.xlsx" :limit="1"
+                     style="margin-top: 16px; margin-left: 35%; float: left;">
+            <el-button slot="trigger">导入Excel</el-button>
+          </el-upload>
+          <el-button style="margin-top: 16px; margin-left: 16px" type="primary" @click="clickUpdateHwScores(editHomework.id)">发布成绩</el-button>
+        </el-dialog>
+        <!--弹窗：发布新作业-->
         <el-dialog title="发布作业" :visible.sync="newHomeworkVisible" width="40%" center>
           <el-form :model="newHomeworkForm" label-width="100px" :rules="newHomeworkRules" ref="newHomeworkForm">
             <el-form-item label="作业题目" prop="name">
@@ -197,24 +246,32 @@
 export default {
   name: 'TeacherCourses',
   mounted () {
-    if (this.$cookies.isKey('userId')) {
-      /* HTTP请求 */
-      this.$http.get('/MyCourses/TeacherCourses', {'params': {'teacherId': this.$cookies.get('userId')}
-      }).then((res) => {
-        if (res.data.result === 'SUCCESS') {
-          this.teacherCourses = res.data.teacherCourses
-        } else {
-          this.$message.error('网络错误，请刷新或稍后再试')
-        }
-      }, () => {
+    // if (this.$cookies.isKey('userId')) {
+    /* HTTP请求 */
+    this.$http.get('/MyCourses/TeacherCourses', {'params': {'teacherId': this.$cookies.get('userId')}
+    }).then((res) => {
+      if (res.data.result === 'SUCCESS') {
+        this.teacherCourses = res.data.teacherCourses
+      } else {
         this.$message.error('网络错误，请刷新或稍后再试')
-      })
-    } else {
-      /* 如果cookie不存在，则跳转到登录页 */
-      this.$router.push('/login')
-    }
+      }
+    }, () => {
+      this.$message.error('网络错误，请刷新或稍后再试')
+    })
+    // } else {
+    //   /* 如果cookie不存在，则跳转到登录页 */
+    //   this.$router.push('/login')
+    // }
   },
   methods: {
+    pre2 (num) {
+      return (Array(2).join('0') + num).slice(-2)
+    },
+    dateTime (dateTime) {
+      let sec = dateTime.length >= 6 ? dateTime[5] : 0
+      return dateTime[0] + '年' + dateTime[1] + '月' + dateTime[2] + '日' +
+        ' ' + dateTime[3] + ':' + this.pre2(dateTime[4]) + ':' + this.pre2(sec)
+    },
     clickClass (classId) {
       this.$http.get('/MyCourses/class', {'params': {userId: this.userId, classId: classId}}).then(res => {
         console.log(res.data)
@@ -230,6 +287,75 @@ export default {
     },
     toProfile () {
       this.isProfile = true
+    },
+    clickEditScores () {
+      this.$http.get('/MyCourses/getClassScores', {'params': {classId: this.classInfo.id}}).then(res => {
+        if (res.data.result === 'SUCCESS') {
+          this.editClassScore.scores = res.data.scores
+          this.editClassScore.publishMethod = this.classInfo.publishMethod
+          this.editScoresVisible = true
+        } else {
+          this.$message.error('网络错误，请刷新或稍后再试')
+        }
+      }, () => {
+        this.$message.error('网络错误，请刷新或稍后再试')
+      })
+    },
+    clickUploadExcel (file) {
+      console.log('file', file)
+      let files = {0: file.raw}
+      if (files.length <= 0) { // 如果没有文件名
+        return false
+      } else if (!/\.(xls|xlsx)$/.test(files[0].name.toLowerCase())) {
+        this.$message.error('上传格式不正确，请上传xls或者xlsx格式')
+        return false
+      }
+      const fileReader = new FileReader()
+      fileReader.onload = (ev) => {
+        console.log('loaded')
+        try {
+          const data = ev.target.result
+          const workbook = this.$XLSX.read(data, {
+            type: 'binary'
+          })
+          const sheetName = workbook.SheetNames[0] // 取第一张表
+          const table = this.$XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]) // 生成json表格内容
+          console.log('json:', table)
+          for (let i = 0; i < table.length; i += 1) {
+            for (let j = 0; j < this.editClassScore.scores.length; j += 1) {
+              if (table[i]['学号'] === Number(this.editClassScore.scores[j].studentId)) {
+                this.editClassScore.scores[j].score = table[i]['成绩']
+                break
+              }
+            }
+          }
+          // 清空接收数据
+          this.$refs.classExcel.value = ''
+        } catch (e) {
+          return false
+        }
+      }
+      fileReader.readAsBinaryString(files[0])
+    },
+    clickUpdateScores () {
+      /* HTTP请求 */
+      this.$http.post('/MyCourses/updateScores', {
+        scores: this.editClassScore.scores,
+        classId: this.classInfo.id,
+        publishMethod: this.editClassScore.publishMethod
+      }).then((res) => {
+        console.log(res.data)
+        if (res.data.result === 'SUCCESS') {
+          this.classInfo.publishMethod = this.editClassScore.publishMethod
+          this.editScoresVisible = false
+          this.$message.success('发布班次成绩成功！')
+        } else {
+          this.$message.error('网络错误，请刷新或稍后再试')
+          console.log('未知错误：' + res.data.result)
+        }
+      }, () => {
+        this.$message.error('网络错误，请刷新或稍后再试')
+      })
     },
     addPost (formName, courseId) {
       console.log(this.$refs[formName][0])
@@ -434,6 +560,101 @@ export default {
           return false
         }
       })
+    },
+    clickEditHwScores (homeworkId, publishMethod) {
+      this.$http.get('/MyCourses/getHomeworkScores', {'params': {homeworkId: homeworkId}}).then(res => {
+        if (res.data.result === 'SUCCESS') {
+          this.editHomework.id = homeworkId
+          this.editHomework.publishMethod = publishMethod
+          this.editHomework.homeworkScores = res.data.homeworkScores
+          this.editHwScoresVisible = true
+        } else {
+          this.$message.error('网络错误，请刷新或稍后再试')
+        }
+      }, () => {
+        this.$message.error('网络错误，请刷新或稍后再试')
+      })
+    },
+    clickUploadHwExcel (file) {
+      console.log('file', file)
+      let files = {0: file.raw}
+      if (files.length <= 0) { // 如果没有文件名
+        return false
+      } else if (!/\.(xls|xlsx)$/.test(files[0].name.toLowerCase())) {
+        this.$message.error('上传格式不正确，请上传xls或者xlsx格式')
+        return false
+      }
+      const fileReader = new FileReader()
+      fileReader.onload = (ev) => {
+        console.log('loaded')
+        try {
+          const data = ev.target.result
+          const workbook = this.$XLSX.read(data, {
+            type: 'binary'
+          })
+          const sheetName = workbook.SheetNames[0] // 取第一张表
+          const table = this.$XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]) // 生成json表格内容
+          console.log('json:', table)
+          for (let i = 0; i < table.length; i += 1) {
+            for (let j = 0; j < this.homeworkScores.length; j += 1) {
+              if (table[i]['学号'] === Number(this.homeworkScores[j].studentId)) {
+                this.homeworkScores[j].score = table[i]['成绩']
+                break
+              }
+            }
+          }
+          // 清空接收数据
+          this.$refs.homeworkExcel.value = ''
+        } catch (e) {
+          return false
+        }
+      }
+      fileReader.readAsBinaryString(files[0])
+    },
+    clickUpdateHwScores (homeworkId) {
+      /* HTTP请求 */
+      this.$http.post('/MyCourses/updateHwScores', {
+        homeworkId: homeworkId,
+        publishMethod: this.editHomework.publishMethod,
+        scores: this.editHomework.homeworkScores}
+      ).then((res) => {
+        console.log(res.data)
+        if (res.data === 'SUCCESS') {
+          this.classInfo.homework.forEach(homework => {
+            if (homework.id === homeworkId) {
+              homework.publishMethod = this.editHomework.publishMethod
+            }
+          })
+          this.editHwScoresVisible = false
+          this.$message.success('发布作业成绩成功！')
+        } else {
+          this.$message.error('网络错误，请刷新或稍后再试')
+          console.log('未知错误：' + res.data.result)
+        }
+      }, () => {
+        this.$message.error('网络错误，请刷新或稍后再试')
+      })
+    },
+    clickDownloadSubmissions (homeworkId) {
+      this.$http.get('/MyCourses/downloadSubmissions', {'params': {homeworkId: homeworkId}, 'responseType': 'blob'}).then(data => {
+        // 由于是ajax调用下载方法，下载数据不会直接下载到本地，所以再创建一个a标签，给它一个 download 属性（HTML5新属性）
+        console.log(data)
+        if (!data) {
+          return
+        }
+        let url = window.URL.createObjectURL(data.data)
+        let link = document.createElement('a')
+        link.style.display = 'none'
+        link.href = url
+        // download 属性定义了下载链接的地址而不是跳转路径
+        let filename = data.headers.map['content-disposition'][0]
+        filename = filename.substring(filename.indexOf('filename=') + 9)
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+      }, () => {
+        this.$message.error('网络错误，请刷新或稍后再试')
+      })
     }
   },
   data () {
@@ -441,6 +662,8 @@ export default {
       name: this.$cookies.get('email'),
       userId: this.$cookies.get('userId'),
       isProfile: false,
+      editScoresVisible: false,
+      editHwScoresVisible: false,
       newPostDialogVisible: false,
       newReplyDialogVisible: false,
       newCourseDialogVisible: false,
@@ -526,7 +749,7 @@ export default {
               id: 2,
               replies: '回帖者2',
               text: '正文',
-              time: []
+              time: [2019, 3, 29, 0, 0, 0]
             }]
           }],
           classes: [{classId: 1, term: 1, classOrder: 1, startTime: [], endTime: [], passReview: false}]
@@ -547,25 +770,42 @@ export default {
         grade: 1,
         term: 1,
         classOrder: 1,
-        startTime: [],
-        endTime: [],
+        number: 105,
+        startTime: [2019, 3, 1],
+        endTime: [2019, 6, 30],
+        publishMethod: 'NOT_YET',
         homework: [{
           id: 1,
           name: '作业1',
           description: '一段描述',
-          deadline: '2019-03-9',
-          submitted: true,
+          deadline: [2019, 3, 29, 0, 0, 0],
+          publishMethod: 'NOT_YET',
           sizeLimit: 2,
+          numberSubmitted: 1,
           typeRestriction: ['doc', 'docx']
         }, {
           id: 2,
           name: '作业2',
           description: '一段描述',
-          deadline: [],
-          submitted: false,
+          deadline: [2019, 3, 29, 0, 0, 0],
+          publishMethod: 'ONLY_FOR_ME',
           sizeLimit: 2,
+          numberSubmitted: 0,
           typeRestriction: ['doc', 'docx']
         }]
+      },
+      editHomework: {
+        id: 0,
+        publishMethod: '',
+        homeworkScores: [{submissionId: 1, studentId: '161250042', score: 100.0},
+          {submissionId: 2, studentId: '161250040', score: 60.0},
+          {submissionId: 0, studentId: '161250039', score: 0.0}]
+      },
+      editClassScore: {
+        publishMethod: '',
+        scores: [{studentId: 1, strId: '161250042', score: 100.0},
+          {studentId: 2, strId: '161250040', score: 60.0},
+          {studentId: 3, strId: '161250039', score: 0.0}]
       }
     }
   }

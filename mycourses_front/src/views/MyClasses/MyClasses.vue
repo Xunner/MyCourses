@@ -5,13 +5,14 @@
     </el-header>
     <el-main>
       <!--所有选课-->
+      <div v-if="myClasses.length === 0">您还没有选上任何课程，可以前往“选课”页面进行选课</div>
       <el-card v-for="(myClass, i) of myClasses" :key="i" class="box-card" v-show="isProfile">
         <div slot="header">
           <el-button type="text" @click="clickClass(myClass.classId)">{{myClass.name}}</el-button>
         </div>
         <div v-for="(homework, i2) in myClass.homework" :key="i2" class="text"><i class="el-icon-edit-outline"></i>
           <span class="item">尚未提交的作业：{{homework.name}}</span>
-          <span class="item">&nbsp;&nbsp;&nbsp;&nbsp;截止日期：{{homework.deadline}}</span>
+          <span class="item">&nbsp;&nbsp;&nbsp;&nbsp;截止日期：{{dateTime(homework.deadline)}}</span>
         </div>
       </el-card>
       <!--某一选课详情-->
@@ -23,67 +24,93 @@
               <div class="left">任课教师：{{classInfo.teacherName}}</div>
               <div class="left">时期：大学{{classInfo.grade}}年级第{{classInfo.term}}学期</div>
               <div class="left">班级：{{classInfo.classOrder}}班</div>
-              <div class="left">开课时间：{{classInfo.startTime}}</div>
-              <div class="left">结课时间：{{classInfo.endTime}}</div>
+              <div class="left">开课时间：{{classInfo.startTime[0]}}年{{classInfo.startTime[1]}}月{{classInfo.startTime[2]}}日</div>
+              <div class="left">结课时间：{{classInfo.endTime[0]}}年{{classInfo.endTime[1]}}月{{classInfo.endTime[2]}}日</div>
+              <div class="left">学生人数：{{classInfo.number}}</div>
             </el-card>
             <el-card class="class-info-card">
-              <div slot="header" style="text-align: left">课件</div>
-              <div class="left" v-for="(courseware, i) of classInfo.coursewares" :key="i">
-                <el-button type="text" @click="clickCourseware(courseware.id)">{{courseware.name}}</el-button>
-              </div>
+              <div slot="header" style="text-align: left">论坛</div>
+              <el-collapse v-model="activePostId">
+                <el-collapse-item v-for="(post, i) of classInfo.posts" :key="i" :name="post.id">
+                  <template slot="title">标题：{{post.title}}&nbsp;&nbsp;&nbsp;{{dateTime(post.time)}}</template>
+                  <el-card style="margin: 5px 5px">
+                    <el-button style="float: right; padding: 2px 0" type="text" icon="el-icon-plus"
+                               @click="newReplyDialogVisible = true
+                                  replyForm.postId = post.id">回帖
+                    </el-button>
+                    <div class="left">由 {{post.poster}} 发帖：</div>
+                    <div class="left">{{post.text}}</div>
+                  </el-card>
+                  <el-card v-for="(reply, i2) of post.replies" :key="i2" class="class-info-card">
+                    <div class="left">由 {{reply.replies}} 于 {{dateTime(reply.time)}} 回帖：</div>
+                    <div class="left">{{reply.text}}</div>
+                  </el-card>
+                </el-collapse-item>
+              </el-collapse>
+              <el-button style="margin-top: 16px" @click="newPostDialogVisible = true">发布新帖子</el-button>
+              <!--弹窗：发布新帖子-->
+              <el-dialog title="新的帖子" :visible.sync="newPostDialogVisible" width="40%" center>
+                <el-form class="post-wrap" :model="postForm" :rules="postRules" ref="postForm">
+                  <el-form-item prop="title">
+                    <el-input class="input" type="text" placeholder="标题" v-model="postForm.title"></el-input>
+                  </el-form-item>
+                  <el-form-item prop="text">
+                    <el-input type="textarea" :autosize="{minRows: 4}" placeholder="请输入正文" v-model="postForm.text"></el-input>
+                  </el-form-item>
+                  <el-form-item>
+                    <el-button class="button" @click="newPostDialogVisible = false">取消</el-button>
+                    <el-button class="button" type="primary" @click="addPost('postForm', classInfo.id)">发帖</el-button>
+                  </el-form-item>
+                </el-form>
+              </el-dialog>
+              <!--弹窗：发布回帖-->
+              <el-dialog title="新的回帖" :visible.sync="newReplyDialogVisible" width="40%" center>
+                <el-form class="post-wrap" :model="replyForm" ref="replyForm">
+                  <el-form-item prop="text" :rules="{required: true, message: '回复内容不能为空', trigger: 'blur'}">
+                    <el-input type="textarea" :autosize="{minRows: 4}" placeholder="请输入回复内容" v-model="replyForm.text"></el-input>
+                  </el-form-item>
+                  <el-form-item>
+                    <el-button class="button" @click="newReplyDialogVisible = false">取消</el-button>
+                    <el-button class="button" type="primary" @click="addReply('replyForm')">回帖</el-button>
+                  </el-form-item>
+                </el-form>
+              </el-dialog>
             </el-card>
             <el-button @click="toProfile">返回</el-button>
             <el-button @click="quitClass(classInfo.id)">退课</el-button>
           </el-col>
           <el-col :span="12">
             <el-card class="class-info-card">
+              <div slot="header" style="text-align: left">课件</div>
+              <div class="left" v-for="(courseware, i) of classInfo.coursewares" :key="i">
+                <el-button type="text" @click="clickCourseware(courseware.id, courseware.name)">{{courseware.name}}</el-button>
+              </div>
+            </el-card>
+            <el-card class="class-info-card">
               <div slot="header" style="text-align: left">作业</div>
               <el-collapse v-model="activeHomeworkId" accordion>
                 <el-collapse-item v-for="(homework, i) of classInfo.homework" :key="i" :name="homework.id">
                   <template slot="title">
                     {{homework.name}}&nbsp;&nbsp;&nbsp;
-                    <i v-if="!homework.submitted" class="el-icon-warning">未提交</i>
+                    <i v-if="homework.submissionId === 0" class="el-icon-warning">未提交</i>
                     <i v-else class="el-icon-check">已提交</i>
                   </template>
                   <div class="left">{{homework.description}}</div>
-                  <div class="left">截止日期：{{homework.deadline}}</div>
-                  <el-button @click="downloadSubmission(homework.id)" v-show="homework.submitted">下载作业</el-button>
-                  <el-upload :data="userId" action="/MyCourses/submitHomework" :before-upload="beforeHomeworkUpload"
-                             :on-success="uploadHomeworkSuccess" v-show="!homework.submitted" style="margin-top: 15px" drag>
+                  <div class="left">截止日期：{{dateTime(homework.deadline)}}</div>
+                  <el-button style="margin-top: 16px" @click="downloadSubmission(homework.submissionId)"
+                             v-show="homework.submissionId !== 0">下载作业</el-button>
+                  <el-upload :data="{studentId: userId, homeworkId: homework.id}" action="/MyCourses/submitHomework"
+                             :before-upload="beforeHomeworkUpload" :on-success="uploadHomeworkSuccess" limit="1"
+                             v-show="homework.submissionId === 0" style="margin-top: 15px" drag>
                     <i class="el-icon-upload"></i>
                     <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-                    <div class="el-upload__tip" slot="tip">
-                      只能上传{{homework.typeRestriction}}文件，且不超过{{homework.sizeLimit}}MB
+                    <div class="el-upload__tip" slot="tip">只能上传一个
+                      <div v-if="homework.typeRestriction.length > 0 && homework.typeRestriction[0].length > 0">
+                        {{homework.typeRestriction.join('/')}}</div>文件，且不超过{{homework.sizeLimit}}MB
                     </div>
                   </el-upload>
                 </el-collapse-item>
               </el-collapse>
-            </el-card>
-            <el-card class="class-info-card">
-              <div slot="header" style="text-align: left">论坛</div>
-              <el-collapse v-model="activePostId">
-                <el-collapse-item v-for="(post, i) of classInfo.posts" :key="i" :name="post.id">
-                  <template slot="title">{{post.title}}&nbsp;&nbsp;&nbsp;{{post.time}}</template>
-                  <div class="left">由 {{post.poster}} 发表</div>
-                  <div class="left">{{post.text}}</div>
-                  <el-card v-for="(reply, i2) of post.replies" :key="i2" class="class-info-card">
-                    <div class="left">由 {{reply.replies}} 发表于 {{reply.time}}</div>
-                    <div class="left">{{reply.text}}</div>
-                  </el-card>
-                </el-collapse-item>
-              </el-collapse>
-              <el-form class="post-wrap" :model="postForm" :rules="postRules" ref="postForm">
-                <h3>发布新帖子</h3>
-                <el-form-item prop="title">
-                  <el-input class="input" type="text" placeholder="标题" v-model="postForm.title"></el-input>
-                </el-form-item>
-                <el-form-item prop="text">
-                  <el-input type="textarea" :autosize="{minRows: 4}" placeholder="请输入正文" v-model="postForm.text"></el-input>
-                </el-form-item>
-                <el-form-item>
-                  <el-button class="button" type="primary" @click="addPost('postForm')">发帖</el-button>
-                </el-form-item>
-              </el-form>
             </el-card>
           </el-col>
         </el-row>
@@ -114,6 +141,14 @@ export default {
     }
   },
   methods: {
+    pre2 (num) {
+      return (Array(2).join('0') + num).slice(-2)
+    },
+    dateTime (dateTime) {
+      let sec = dateTime.length >= 6 ? dateTime[5] : 0
+      return dateTime[0] + '年' + dateTime[1] + '月' + dateTime[2] + '日' +
+        ' ' + dateTime[3] + ':' + this.pre2(dateTime[4]) + ':' + this.pre2(sec)
+    },
     clickClass (classId) {
       this.$http.get('/MyCourses/class', {'params': {userId: this.userId, classId: classId}}).then(res => {
         console.log(res.data)
@@ -130,14 +165,21 @@ export default {
     toProfile () {
       this.isProfile = true
     },
-    clickCourseware (coursewareId) {
-      this.$http.post('/MyCourses/downloadCourseware', {coursewareId: coursewareId}).then(res => {
-        if (res.data.result === 'SUCCESS') {
-          this.$message.success('成功！')
-          // TODO
-        } else {
-          this.$message.error('网络错误，请刷新或稍后再试')
+    clickCourseware (coursewareId, name) {
+      this.$http.get('/MyCourses/downloadCourseware', {'params': {coursewareId: coursewareId}, 'responseType': 'blob'}).then(data => {
+        // 由于是ajax调用下载方法，下载数据不会直接下载到本地，所以再创建一个a标签，给它一个 download 属性（HTML5新属性）
+        console.log(data)
+        if (!data) {
+          return
         }
+        let url = window.URL.createObjectURL(data.data)
+        let link = document.createElement('a')
+        link.style.display = 'none'
+        link.href = url
+        // download 属性定义了下载链接的地址而不是跳转路径
+        link.setAttribute('download', name)
+        document.body.appendChild(link)
+        link.click()
       }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
       })
@@ -161,12 +203,15 @@ export default {
       })
     },
     beforeHomeworkUpload (file) {
-      for (let item of this.posts) {
+      for (let item of this.classInfo.homework) {
         if (item.id === this.activeHomeworkId) {
-          const isValidType = file.type === item.typeRestriction
+          console.log(item.typeRestriction)
+          console.log(file.name)
+          const isValidType = item.typeRestriction.length === 0 || item.typeRestriction[0].length === 0 ||
+            item.typeRestriction.includes(file.name.substring(file.name.indexOf('.') + 1))
           const isValidSize = file.size / 1024 / 1024 < item.sizeLimit
           if (!isValidType) {
-            this.$message.error('上传文件类型只能为' + item.typeRestriction + '!')
+            this.$message.error('上传文件类型只能为' + item.typeRestriction.join('、') + '!')
           }
           if (!isValidSize) {
             this.$message.error('上传文件大小不能超过' + item.sizeLimit + 'MB!')
@@ -175,15 +220,17 @@ export default {
         }
       }
     },
-    addPost (formName) {
+    addPost (formName, classId) {
+      console.log(this.$refs[formName])
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          const data = {userId: this.userId, title: this.postForm.title, text: this.postForm.text}
+          const data = {userId: this.userId, classId: classId, title: this.postForm.title, text: this.postForm.text}
           /* HTTP请求 */
           this.$http.post('/MyCourses/addPost', data).then((res) => {
             console.log(res.data)
             if (res.data.result === 'SUCCESS') {
               this.classInfo.posts.push(res.data.post)
+              this.newPostDialogVisible = false
               this.$message.success('发帖成功')
             } else {
               this.$message.error('网络错误，请刷新或稍后再试')
@@ -197,24 +244,63 @@ export default {
         }
       })
     },
+    addReply (formName) {
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          const data = {userId: this.userId, postId: this.replyForm.postId, text: this.replyForm.text}
+          /* HTTP请求 */
+          this.$http.post('/MyCourses/addReply', data).then((res) => {
+            console.log(res.data)
+            if (res.data.result === 'SUCCESS') {
+              this.classInfo.posts.forEach(post => {
+                if (post.id === this.replyForm.postId) {
+                  post.replies.push(res.data.reply)
+                  this.newReplyDialogVisible = false
+                  this.$message.success('回帖成功')
+                }
+              })
+            } else {
+              this.$message.error('网络错误，请刷新或稍后再试')
+              console.log('未知错误：' + res.data.result)
+            }
+          }, () => {
+            this.$message.error('网络错误，请刷新或稍后再试')
+          })
+        } else {
+          return false
+        }
+      })
+    },
     uploadHomeworkSuccess (res) {
-      console.log(res.data)
-      if (res.data.result === 'SUCCESS') {
-        // this.classInfo.h.push(res.data.courseware)
-        this.$message.success('上传作业成功！')
+      if (res.result === 'SUCCESS') {
+        this.classInfo.homework.forEach(homework => {
+          if (homework.id === res.homeworkId) {
+            homework.submissionId = res.submissionId
+          }
+        })
+        this.$message.success('提交作业成功！')
       } else {
         this.$message.error('网络错误，请刷新或稍后再试')
       }
     },
-    downloadSubmission (homeworkId) {
+    downloadSubmission (submissionId) {
       /* HTTP请求 */
-      this.$http.get('/MyCourses/downloadSubmission', {params: {homeworkId: homeworkId}}).then((res) => {
-        console.log(res.data)
-        if (res.data.result === 'SUCCESS') {
-          this.$message.success('成功')
-        } else {
-          this.$message.error('网络错误，请刷新或稍后再试')
+      this.$http.get('/MyCourses/downloadSubmission', {params: {submissionId: submissionId}, 'responseType': 'blob'}).then((data) => {
+        // 由于是ajax调用下载方法，下载数据不会直接下载到本地，所以再创建一个a标签，给它一个 download 属性（HTML5新属性）
+        console.log(data)
+        if (!data) {
+          return
         }
+        let url = window.URL.createObjectURL(data.data)
+        let link = document.createElement('a')
+        link.style.display = 'none'
+        link.href = url
+        // download 属性定义了下载链接的地址而不是跳转路径
+        let filename = data.headers.map['content-disposition'][0]
+        filename = filename.substring(filename.indexOf('filename=') + 9)
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
       }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
       })
@@ -224,10 +310,13 @@ export default {
     return {
       name: this.$cookies.get('email'),
       userId: this.$cookies.get('userId'),
-      isProfile: false,
+      isProfile: true,
+      newPostDialogVisible: false,
+      newReplyDialogVisible: false,
       activeHomeworkId: '',
       activePostId: '',
       postForm: {title: '', text: ''},
+      replyForm: {postId: 1, text: ''},
       postRules: {
         title: [{required: true, message: '请输入标题', trigger: 'blur'}],
         text: [{required: true, message: '请输入正文', trigger: 'blur'}]
@@ -256,17 +345,17 @@ export default {
           name: '作业1',
           description: '一段描述',
           deadline: '2019-03-9',
-          submitted: true,
+          submissionId: 1,
           sizeLimit: 2,
-          typeRestriction: 'doc/docx'
+          typeRestriction: ['doc', 'docx']
         }, {
           id: 2,
           name: '作业2',
           description: '一段描述',
           deadline: '2019-03-10',
-          submitted: false,
+          submissionId: 0,
           sizeLimit: 2,
-          typeRestriction: 'doc/docx'
+          typeRestriction: ['doc', 'docx']
         }],
         posts: [{
           id: 1,

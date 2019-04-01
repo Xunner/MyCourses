@@ -8,6 +8,8 @@ import VueCookies from 'vue-cookies'
 import StudentNav from './components/StudentNav'
 import TeacherNav from './components/TeacherNav'
 import AdminNav from './components/AdminNav'
+import echarts from 'echarts'
+import XLSX from 'xlsx'
 
 Vue.use(VueCookies)
 Vue.use(VueResource)
@@ -16,6 +18,8 @@ Vue.component('StudentNav', StudentNav)
 Vue.component('TeacherNav', TeacherNav)
 Vue.component('AdminNav', AdminNav)
 
+Vue.prototype.$echarts = echarts
+Vue.prototype.$XLSX = XLSX
 Vue.config.productionTip = false
 
 /* eslint-disable no-new */

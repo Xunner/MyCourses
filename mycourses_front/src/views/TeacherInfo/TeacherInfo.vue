@@ -34,7 +34,7 @@
               </div>
               <div class="message-message">{{item.message}}</div>
               <div class="bottom">
-                <time class="time" :datetime="item.time">{{item.time[0]}}年{{item.time[1]}}月{{item.time[2]}}日 {{item.time[3]}}:{{item.time[4]}}:{{item.time[5]}}</time>
+                <time class="time" :datetime="item.time">{{item.time[0]}}年{{item.time[1]}}月{{item.time[2]}}日 {{pre2(item.time[3])}}:{{pre2(item.time[4])}}:{{pre2(item.time[5])}}</time>
               </div>
             </el-card>
             <el-button @click="newMessageDialogVisible = true">写新消息</el-button>
@@ -137,6 +137,9 @@ export default {
     }
   },
   methods: {
+    pre2 (num) {
+      return (Array(2).join('0') + num).slice(-2)
+    },
     editUser () {
       this.isEditing = true
     },
@@ -149,11 +152,11 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        let userIds = []
+        let messageIds = []
         this.messages.forEach(value => {
-          userIds.push(value.messageId)
+          messageIds.push(value.messageId)
         })
-        this.$http.post('/MyCourses/deleteMessages', userIds).then((res) => {
+        this.$http.post('/MyCourses/deleteMessages', messageIds).then((res) => {
           if (res.data === 'SUCCESS') {
             this.$message.success('成功删除全部消息!')
             this.messages = []
@@ -169,9 +172,7 @@ export default {
     deleteMessage (messageId) {
       this.$http.post('/MyCourses/deleteMessages', [messageId]).then((res) => {
         if (res.data === 'SUCCESS') {
-          console.log(this.messages.length)
-          this.messages.filter(value => value.messageId !== messageId)
-          console.log(this.messages.length)
+          this.messages = this.messages.filter(value => value.messageId !== messageId)
           this.$message.success('成功删除消息')
         } else {
           this.$message.error('网络错误，请刷新或稍后再试')

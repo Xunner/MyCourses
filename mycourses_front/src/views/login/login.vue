@@ -1,6 +1,6 @@
 <template>
   <el-container>
-    <el-header height="200px">
+    <el-header style="margin-top: 150px" height="100px">
       <img src="../../assets/logo.png">
     </el-header>
     <el-main>
@@ -71,7 +71,7 @@ export default {
             } else if (res.data.result === 'SUCCESS') {
               this.$cookies.set('userId', res.data.userId, '15MIN')
               this.$cookies.set('userType', res.data.userType, '15MIN')
-              this.$cookies.set('email', data.email, '15MIN')
+              this.$cookies.set('email', data.email.substring(0, data.email.indexOf('@')), '15MIN')
               this.$router.push('/')
             } else {
               this.$message.error('网络错误，请刷新或稍后再试')
