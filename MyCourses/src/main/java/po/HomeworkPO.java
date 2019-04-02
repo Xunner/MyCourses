@@ -1,5 +1,6 @@
 package po;
 
+import enums.PublishMethod;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -40,6 +41,11 @@ public class HomeworkPO {
 	@Column(name = "type_restriction")
 	private String typeRestriction;
 
+	/** 教师公布作业成绩的方式 */
+	@Enumerated
+	@Column(name = "publish_method")
+	private PublishMethod publishMethod;
+
 	@OneToMany(targetEntity = SubmissionPO.class, cascade=CascadeType.REMOVE, fetch = FetchType.EAGER)
 	@JoinColumn(name = "homework_id")
 	private Set<SubmissionPO> submissions;
@@ -61,5 +67,6 @@ public class HomeworkPO {
 		this.deadline = deadline;
 		this.sizeLimit = sizeLimit;
 		this.typeRestriction = typeRestriction;
+		this.publishMethod = PublishMethod.NOT_YET;
 	}
 }

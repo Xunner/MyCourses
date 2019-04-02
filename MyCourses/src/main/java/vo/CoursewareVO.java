@@ -7,12 +7,17 @@ package vo;
  *
  * @author 巽
  **/
-public class CoursewareVO {
+public class CoursewareVO implements Comparable<CoursewareVO> {
 	public Long id;
 	public String name;
 
 	public CoursewareVO(Long id, String name) {
 		this.id = id;
 		this.name = name;
+	}
+
+	@Override
+	public int compareTo(CoursewareVO o) {
+		return (int) (id - o.id);
 	}
 }

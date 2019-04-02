@@ -3,6 +3,8 @@ package service;
 import enums.Result;
 import po.UserPO;
 
+import java.util.Map;
+
 /**
  * 用户服务接口
  * <br>
@@ -24,4 +26,10 @@ public interface UserService {
 	Result updateUserInfo(Long userId, String name, String studentId);
 
 	Result deleteAccount(Long userId);
+
+	String getEmailPrefixById(Long userId);
+
+	Map<String, Object> getStatistics(Long adminId);
+
+	void handlePassedActivation();
 }

@@ -23,5 +23,5 @@
 	<mvc:resources mapping="/index.html" location="/"/>
 
 	<!-- 自动扫描装配 -->
-	<context:component-scan base-package="controller,service,dao"/>
+	<context:component-scan base-package="controller"/>
 </beans>

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  *
  * @author 巽
  **/
-public class ReplyVO {
+public class ReplyVO implements Comparable<ReplyVO> {
 	public Long id;
 	public String replies;
 	public String text;
@@ -20,5 +20,10 @@ public class ReplyVO {
 		this.replies = replies;
 		this.text = text;
 		this.time = time;
+	}
+
+	@Override
+	public int compareTo(ReplyVO o) {
+		return time.isBefore(o.time) ? -1 : 1;
 	}
 }

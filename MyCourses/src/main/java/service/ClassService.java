@@ -1,5 +1,6 @@
 package service;
 
+import enums.PublishMethod;
 import enums.Result;
 import vo.*;
 
@@ -25,8 +26,6 @@ public interface ClassService {
 
 	Result quitClass(Long studentId, Long classId);
 
-	Result publishHomework(Long classId, String name, String description, LocalDateTime deadline, Integer sizeLimit, String typeRestriction);
-
 	ClassInfo getClassInfo(Long userId, Long classId);
 
 	List<ClassStatisticVO> getClassStatistics(Long studentId);
@@ -40,4 +39,14 @@ public interface ClassService {
 	Map<String, Object> getReview(Long adminId);
 
 	HomeworkVO publishHomework(HomeworkVO homeworkVO);
+
+	Long getCourseIdByClassId(Long classId);
+
+	List<HomeworkScore> getHomeworkScores(Long HomeworkId);
+
+	Result updateHomeworkScores(Long homeworkId, PublishMethod publishMethod, List<HomeworkScore> scores);
+
+	List<ClassScore> getClassScores(Long classId);
+
+	Result updateClassScores(Long classId, PublishMethod publishMethod, List<ClassScore> scores);
 }

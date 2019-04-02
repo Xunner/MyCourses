@@ -4,7 +4,8 @@ import lombok.Data;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * 帖子
@@ -35,7 +36,7 @@ public class PostPO {
 
 	@OneToMany(targetEntity = ReplyPO.class, cascade=CascadeType.REMOVE, fetch = FetchType.EAGER)
 	@JoinColumn(name = "post_id")
-	private List<ReplyPO> replies;
+	private Set<ReplyPO> replies;
 
 	public PostPO() {
 	}
@@ -46,5 +47,18 @@ public class PostPO {
 		this.title = title;
 		this.text = text;
 		this.time = time;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		PostPO postPO = (PostPO) o;
+		return Objects.equals(getId(), postPO.getId());
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getId());
 	}
 }

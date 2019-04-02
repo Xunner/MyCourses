@@ -10,7 +10,7 @@ import java.util.List;
  *
  * @author 巽
  **/
-public class PostVO {
+public class PostVO implements Comparable<PostVO> {
 	public Long id;
 	public String poster;
 	public String title;
@@ -24,5 +24,10 @@ public class PostVO {
 		this.title = title;
 		this.text = text;
 		this.time = time;
+	}
+
+	@Override
+	public int compareTo(PostVO o) {
+		return time.isBefore(o.time) ? -1 : 1;
 	}
 }

@@ -13,4 +13,5 @@ import po.TeacherPO;
  **/
 @Repository
 public interface TeacherDao extends JpaRepository<TeacherPO, Long> {
+	int countByDeletedFalse();
 }

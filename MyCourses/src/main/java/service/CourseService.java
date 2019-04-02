@@ -21,10 +21,6 @@ public interface CourseService {
 
 	Result reviewCourse(Long courseId, boolean pass);
 
-	Long uploadCourseware(Long courseId, String name);
-
-	String getFilePathByCoursewareId(Long coursewareId);
-
 	List<TeacherCourseVO> getCourseToReviewByTeacherId(Long teacherId);
 
 	List<NewCourseVO> getAllCoursesToReview();

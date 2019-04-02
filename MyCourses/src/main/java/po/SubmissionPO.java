@@ -29,4 +29,14 @@ public class SubmissionPO {
 	private String name;
 
 	private LocalDateTime time;
+
+	public SubmissionPO() {
+	}
+
+	public SubmissionPO(Long homeworkId, Long studentId, String name, LocalDateTime time) {
+		this.homeworkId = homeworkId;
+		this.studentId = studentId;
+		this.name = name;
+		this.time = time;
+	}
 }

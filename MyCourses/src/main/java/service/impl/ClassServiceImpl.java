@@ -3,14 +3,15 @@ package service.impl;
 import dao.*;
 import enums.ClassState;
 import enums.OperationType;
+import enums.PublishMethod;
 import enums.Result;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import po.*;
 import service.ClassService;
 import service.CourseService;
+import service.UserService;
 import vo.*;
 
 import java.time.LocalDateTime;
@@ -26,6 +27,7 @@ import java.util.*;
 @Service
 @Transactional
 public class ClassServiceImpl implements ClassService {
+	private final UserService userService;
 	private final CourseService courseService;
 	private final CourseDao courseDao;
 	private final ClassDao classDao;
@@ -43,7 +45,8 @@ public class ClassServiceImpl implements ClassService {
 	private final Boolean lock = true;
 
 	@Autowired
-	public ClassServiceImpl(CourseService courseService, CourseDao courseDao, ClassDao classDao, UserDao userDao, StudentDao studentDao, TeacherDao teacherDao, HomeworkDao homeworkDao, LogDao logDao, PostDao postDao, MessageDao messageDao, CoursewareDao coursewareDao, ReplyDao replyDao) {
+	public ClassServiceImpl(UserService userService, CourseService courseService, CourseDao courseDao, ClassDao classDao, UserDao userDao, StudentDao studentDao, TeacherDao teacherDao, HomeworkDao homeworkDao, LogDao logDao, PostDao postDao, MessageDao messageDao, CoursewareDao coursewareDao, ReplyDao replyDao) {
+		this.userService = userService;
 		this.courseService = courseService;
 		this.courseDao = courseDao;
 		this.classDao = classDao;
@@ -76,7 +79,7 @@ public class ClassServiceImpl implements ClassService {
 				}
 				homeworkProfiles.add(new HomeworkProfile(homeworkPO.getName(), homeworkPO.getDeadline()));
 			}
-			ret.add(new ClassProfile(courseDao.findOne(classPO.getCourseId()).getName(), homeworkProfiles));
+			ret.add(new ClassProfile(classPO.getId(), courseDao.findOne(classPO.getCourseId()).getName(), homeworkProfiles));
 		}
 		return ret;
 	}
@@ -131,6 +134,7 @@ public class ClassServiceImpl implements ClassService {
 		ClassPO classPO = classDao.findOne(classId);
 		if (classPO.getClassState() == ClassState.NOT_STARTED || classPO.getStudentScores().size() < classPO.getMaxNumber()) {
 			studentPO.getClassScores().put(classPO, 0d);
+			studentDao.save(studentPO);
 			return Result.SUCCESS;
 		}
 		return Result.FAILED;
@@ -142,14 +146,6 @@ public class ClassServiceImpl implements ClassService {
 		studentPO.getClassScores().entrySet().removeIf(entry -> entry.getKey().getId().equals(classId));
 		studentDao.save(studentPO);
 		logDao.save(new LogPO(LocalDateTime.now(), studentId, classId, ClassPO.class.getName(), OperationType.DELETE));
-		return Result.SUCCESS;
-	}
-
-	@Override
-	public Result publishHomework(Long classId, String name, String description, LocalDateTime deadline,
-	                              Integer sizeLimit, String typeRestriction) {
-		HomeworkPO homeworkPO = new HomeworkPO(classId, name, description, deadline, sizeLimit, typeRestriction);
-		homeworkDao.save(homeworkPO);
 		return Result.SUCCESS;
 	}
 
@@ -168,23 +164,26 @@ public class ClassServiceImpl implements ClassService {
 		// 装载homework
 		List<HomeworkVO> homework = new ArrayList<>();
 		for (HomeworkPO homeworkPO : classPO.getHomework()) {
-			boolean submitted = false;
+			Long submissionId = 0L;
 			for (SubmissionPO submissionPO : homeworkPO.getSubmissions()) {
 				if (submissionPO.getStudentId().equals(userId)) {
-					submitted = true;
+					submissionId = submissionPO.getId();
 					break;
 				}
 			}
 			List<String> typeRestriction = new ArrayList<>(Arrays.asList(homeworkPO.getTypeRestriction().split("/")));
 			homework.add(new HomeworkVO(homeworkPO.getId(), classId, homeworkPO.getName(), homeworkPO.getDescription(),
-					homeworkPO.getDeadline(), submitted, homeworkPO.getSizeLimit(), typeRestriction));
+					homeworkPO.getDeadline(), submissionId, homeworkPO.getSizeLimit(), typeRestriction,
+					homeworkPO.getSubmissions().size(), homeworkPO.getPublishMethod()));
 		}
+		Collections.sort(homework);
 		ret.homework = homework;
 		// 装载coursewares
 		List<CoursewareVO> coursewares = new ArrayList<>();
 		for (CoursewarePO coursewarePO : coursePO.getCoursewares()) {
 			coursewares.add(new CoursewareVO(coursewarePO.getId(), coursewarePO.getName()));
 		}
+		Collections.sort(coursewares);
 		ret.coursewares = coursewares;
 		// 装载posts
 		List<PostVO> posts = new ArrayList<>();
@@ -196,9 +195,11 @@ public class ClassServiceImpl implements ClassService {
 				replies.add(new ReplyVO(replyPO.getId(), userDao.findOne(replyPO.getUserId()).getName(),
 						replyPO.getText(), replyPO.getTime()));
 			}
+			Collections.sort(replies);
 			postVO.replies = replies;
 			posts.add(postVO);
 		}
+		Collections.sort(posts);
 		ret.posts = posts;
 		return ret;
 	}
@@ -242,22 +243,24 @@ public class ClassServiceImpl implements ClassService {
 		if (studentPO == null) {
 			return new TakeClassesVO(Result.NOT_EXIST, null, null);
 		}
-		List<ClassPO> classPOS = classDao.findAllByClassState(ClassState.NOT_STARTED);
+		List<ClassPO> classPOS = classDao.findAll();
 		Set<ClassPO> selected = studentPO.getClassScores().keySet();
 		List<ClassToTakeVO> unselectedClass = new ArrayList<>();
 		List<ClassToTakeVO> selectedClass = new ArrayList<>();
-		for (ClassPO classPO : classPOS) {  // 遍历所有未开的课
+		for (ClassPO classPO : classPOS) {  // 遍历所有课
 			CoursePO coursePO = courseDao.findOne(classPO.getCourseId());
 			if (selected.contains(classPO)) {   // 已经申请选课
 				selectedClass.add(new ClassToTakeVO(classPO.getId(), coursePO.getName(),
 						teacherDao.findOne(coursePO.getTeacherId()).getName(), coursePO.getGrade(), classPO.getTerm(),
 						classPO.getClassOrder(), classPO.getStartTime(), classPO.getEndTime(),
-						new ClassNumberVO(classPO.getStudentScores().size(), classPO.getMaxNumber())));
+						new ClassNumberVO(classPO.getStudentScores().size(), classPO.getMaxNumber()), false));
 			} else {    // 尚未申请选课
+				boolean canTake = classPO.getClassState() == ClassState.NOT_STARTED
+						|| classPO.getClassState() == ClassState.STARTED && classPO.getStudentScores().size() < classPO.getMaxNumber();
 				unselectedClass.add(new ClassToTakeVO(classPO.getId(), coursePO.getName(),
 						teacherDao.findOne(coursePO.getTeacherId()).getName(), coursePO.getGrade(), classPO.getTerm(),
 						classPO.getClassOrder(), classPO.getStartTime(), classPO.getEndTime(),
-						new ClassNumberVO(classPO.getStudentScores().size(), classPO.getMaxNumber())));
+						new ClassNumberVO(classPO.getStudentScores().size(), classPO.getMaxNumber()), canTake));
 			}
 		}
 		return new TakeClassesVO(Result.SUCCESS, unselectedClass, selectedClass);
@@ -343,42 +346,85 @@ public class ClassServiceImpl implements ClassService {
 		return vo;
 	}
 
-	@Scheduled(fixedRate = 60000)   // 60秒执行一次
-	public void handleStartingClass() {
-		System.out.println("自动开课定时检测");
-		List<ClassPO> classPOs = classDao.findAllByClassStateAndStartTimeBefore(ClassState.NOT_STARTED, LocalDateTime.now());
-		for (ClassPO classPO : classPOs) {
-			System.out.println("检测到可自动开课班次：" + classPO);
-			CoursePO coursePO = courseDao.findOne(classPO.getCourseId());
-			Map<StudentPO, Double> studentScores = classPO.getStudentScores();
-			Integer maxNumber = classPO.getMaxNumber();
-			if (studentScores.size() > maxNumber) { // 选课人数超过上限，随机分配
-				List<StudentPO> studentList = new ArrayList<>(studentScores.keySet());
-				int number = studentList.size();
-				Map<StudentPO, Double> newStudents = new HashMap<>();
-				while (newStudents.size() < maxNumber) {
-					Random rand = new Random();
-					newStudents.put(studentList.get(rand.nextInt(number)), 0d);
-				}
-				// 给学生发消息
-				for (StudentPO studentPO : studentList) {
-					if (!newStudents.containsKey(studentPO)) {
-						messageDao.save(new MessagePO(null, studentPO.getId(), LocalDateTime.now(),
-								"选课结果通知", "很遗憾，由于人数限制，您未能选上课程《" + coursePO.getName() + "》。", true));
+	@Override
+	public Long getCourseIdByClassId(Long classId) {
+		return classDao.findOne(classId).getCourseId();
+	}
+
+	@Override
+	public List<HomeworkScore> getHomeworkScores(Long HomeworkId) {
+		HomeworkPO homeworkPO = homeworkDao.findOne(HomeworkId);
+		if (homeworkPO == null) return null;
+		List<HomeworkScore> homeworkScores = new ArrayList<>();
+		final Map<StudentPO, Double> studentScores = homeworkPO.getStudentScores();
+		for (StudentPO studentPO : classDao.findOne(homeworkPO.getClassId()).getStudentScores().keySet()) {
+			Double score = studentScores.get(studentPO);
+			String sid = studentPO.getEmail();
+			if (score == null) {
+				homeworkScores.add(new HomeworkScore(0L, sid.substring(0, sid.indexOf('@')), 0d));
+			} else {
+				for (SubmissionPO submissionPO : homeworkPO.getSubmissions()) {
+					if (submissionPO.getStudentId().equals(studentPO.getId())) {
+						homeworkScores.add(new HomeworkScore(submissionPO.getId(), sid.substring(0, sid.indexOf('@')), score));
+						break;
 					}
 				}
-				classPO.setStudentScores(newStudents);
 			}
-			// 给学生发消息
-			for (StudentPO studentPO : classPO.getStudentScores().keySet()) {
-				messageDao.save(new MessagePO(null, studentPO.getId(), LocalDateTime.now(),
-						"选课结果通知", "恭喜，您成功选上了课程《" + coursePO.getName() + "》，该课程现已正式开课，请及时查看。", true));
-			}
-			// 给教师发消息
-			messageDao.save(new MessagePO(null, coursePO.getTeacherId(), LocalDateTime.now(),
-					"自动开课通知", "您发布的课程《" + coursePO.getName() + "》已自动开课。", true));
-			classPO.setClassState(ClassState.STARTED);  // 开课
-			classDao.save(classPO);
 		}
+		return homeworkScores;
+	}
+
+	@Override
+	public Result updateHomeworkScores(Long homeworkId, PublishMethod publishMethod, List<HomeworkScore> scores) {
+		HomeworkPO homeworkPO = homeworkDao.findOne(homeworkId);
+		if (homeworkPO == null) return Result.NOT_EXIST;
+		homeworkPO.setPublishMethod(publishMethod);
+		for (Map.Entry<StudentPO, Double> entry : homeworkPO.getStudentScores().entrySet()) {
+			String sid = userService.getEmailPrefixById(entry.getKey().getId());
+			for (HomeworkScore homeworkScore : scores) {
+				if (sid.equals(homeworkScore.studentId)) {
+					entry.setValue(homeworkScore.score);
+					break;
+				}
+			}
+		}
+		return Result.SUCCESS;
+	}
+
+	@Override
+	public List<ClassScore> getClassScores(Long classId) {
+		ClassPO classPO = classDao.findOne(classId);
+		if (classPO == null) return null;
+		List<ClassScore> classScores = new ArrayList<>();
+		final Map<StudentPO, Double> studentScores = classPO.getStudentScores();
+		for (StudentPO studentPO : studentScores.keySet()) {
+			Double score = studentScores.get(studentPO);
+			String sid = studentPO.getEmail();
+			sid = sid.substring(0, sid.indexOf('@'));
+			if (score == null) {
+				classScores.add(new ClassScore(studentPO.getId(), sid, 0d));
+			} else {
+				classScores.add(new ClassScore(studentPO.getId(), sid, score));
+			}
+		}
+		return classScores;
+	}
+
+	@Override
+	public Result updateClassScores(Long classId, PublishMethod publishMethod, List<ClassScore> scores) {
+		ClassPO classPO = classDao.findOne(classId);
+		if (classPO == null) return Result.NOT_EXIST;
+		classPO.setPublishMethod(publishMethod);
+		for (Map.Entry<StudentPO, Double> entry : classPO.getStudentScores().entrySet()) {
+			String sid = entry.getKey().getEmail();
+			sid = sid.substring(0, sid.indexOf('@'));
+			for (ClassScore ClassScore : scores) {
+				if (sid.equals(ClassScore.strId)) {
+					entry.setValue(ClassScore.score);
+					break;
+				}
+			}
+		}
+		return Result.SUCCESS;
 	}
 }

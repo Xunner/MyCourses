@@ -1,12 +1,14 @@
 package po;
 
 import enums.ClassState;
+import enums.PublishMethod;
 import lombok.Data;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -48,6 +50,11 @@ public class ClassPO {
 	@Column(name = "max_number")
 	private Integer maxNumber;
 
+	/** 教师公布考试成绩的方式 */
+	@Enumerated
+	@Column(name = "publish_method")
+	private PublishMethod publishMethod;
+
 	@OneToMany(targetEntity = HomeworkPO.class, cascade=CascadeType.REMOVE, fetch = FetchType.EAGER)
 	@JoinColumn(name = "class_id")
 	private Set<HomeworkPO> homework;
@@ -70,5 +77,19 @@ public class ClassPO {
 		this.term = term;
 		this.classState = classState;
 		this.maxNumber = maxNumber;
+		this.publishMethod = PublishMethod.NOT_YET;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		ClassPO classPO = (ClassPO) o;
+		return Objects.equals(getId(), classPO.getId());
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getId());
 	}
 }

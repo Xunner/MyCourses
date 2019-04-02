@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import po.LogPO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -17,4 +18,6 @@ import java.util.List;
 @Repository
 public interface LogDao extends JpaRepository<LogPO, Long> {
 	List<LogPO> findAllByUserIdAndObjectClassAndOperationType(Long userId, String objectClass, OperationType operationType);
+	int countByTimeBetweenAndObjectClassAndOperationType(LocalDateTime start, LocalDateTime end, String objectClass,
+	                                                     OperationType operationType);
 }

@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
        xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:jpa="http://www.springframework.org/schema/data/jpa"
        xmlns:task="http://www.springframework.org/schema/task"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 	       http://www.springframework.org/schema/beans/spring-beans.xsd
+	       http://www.springframework.org/schema/context
+	       http://www.springframework.org/schema/context/spring-context-4.0.xsd
 	       http://www.springframework.org/schema/tx
 	       http://www.springframework.org/schema/tx/spring-tx-4.1.xsd
 		   http://www.springframework.org/schema/data/jpa
@@ -45,6 +48,8 @@
 		<property name="sharedCacheMode" value="ENABLE_SELECTIVE"/>
 	</bean>
 
+	<context:annotation-config/>
+
 	<!--配置事务-->
 	<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
 		<property name="entityManagerFactory" ref="entityManagerFactory"/>
@@ -60,9 +65,11 @@
 	</bean>
 
 	<!--配置基于注解的定时任务-->
-	<task:scheduler id="scheduler" pool-size="10" />
-	<task:annotation-driven scheduler="scheduler"/>
+	<task:annotation-driven/>
 
 	<!--配置SpringData, 需要加入jpa的命名空间-->
 	<jpa:repositories base-package="dao" entity-manager-factory-ref="entityManagerFactory"/>
+
+	<!-- 自动扫描装配 -->
+	<context:component-scan base-package="service,dao,component"/>
 </beans>

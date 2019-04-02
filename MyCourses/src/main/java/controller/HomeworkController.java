@@ -1,15 +1,16 @@
 package controller;
 
+import enums.PublishMethod;
 import enums.Result;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import service.ClassService;
+import vo.HomeworkScore;
 import vo.HomeworkVO;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,5 +41,27 @@ public class HomeworkController {
 			ret.put("homework", returnVO);
 		}
 		return ret;
+	}
+
+	@RequestMapping(value = "/getHomeworkScores", method = RequestMethod.GET)
+	public Map<String, Object> getHomeworkScores(@RequestParam(value = "homeworkId") Long homeworkId) {
+		System.out.println("getHomeworkScores: " + homeworkId);
+		Map<String, Object> ret = new HashMap<>();
+		List<HomeworkScore> homeworkScores = classService.getHomeworkScores(homeworkId);
+		if (homeworkScores == null) {
+			ret.put("result", Result.FAILED);
+		} else {
+			ret.put("result", Result.SUCCESS);
+			ret.put("homeworkScores", homeworkScores);
+		}
+		return ret;
+	}
+
+	@RequestMapping(value = "/updateHwScores", method = RequestMethod.POST)
+	public Result updateHwScores(@RequestParam(value = "homeworkId") Long homeworkId,
+	                             @RequestParam(value = "publishMethod") String publishMethod,
+	                             @RequestParam(value = "scores") List<HomeworkScore> scores) {
+		System.out.println("updateHwScores: " + scores.toString());
+		return classService.updateHomeworkScores(homeworkId, PublishMethod.valueOf(publishMethod), scores);
 	}
 }

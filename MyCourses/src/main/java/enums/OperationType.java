@@ -8,7 +8,7 @@ package enums;
  * @author 巽
  **/
 public enum OperationType {
-	DELETE("删除");
+	LOGIN("登录"), DELETE("删除");
 
 	OperationType(String value) {
 		this.value = value;

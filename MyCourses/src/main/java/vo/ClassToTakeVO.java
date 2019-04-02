@@ -19,8 +19,9 @@ public class ClassToTakeVO {
 	public LocalDateTime startTime;
 	public LocalDateTime endTime;
 	public ClassNumberVO number;
+	public boolean canTake;
 
-	public ClassToTakeVO(Long classId, String name, String teacher, Integer grade, Integer term, Integer classOrder, LocalDateTime startTime, LocalDateTime endTime, ClassNumberVO number) {
+	public ClassToTakeVO(Long classId, String name, String teacher, Integer grade, Integer term, Integer classOrder, LocalDateTime startTime, LocalDateTime endTime, ClassNumberVO number, boolean canTake) {
 		this.classId = classId;
 		this.name = name;
 		this.teacher = teacher;
@@ -30,5 +31,6 @@ public class ClassToTakeVO {
 		this.startTime = startTime;
 		this.endTime = endTime;
 		this.number = number;
+		this.canTake = canTake;
 	}
 }

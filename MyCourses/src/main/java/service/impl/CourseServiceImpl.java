@@ -31,20 +31,18 @@ public class CourseServiceImpl implements CourseService {
 	private final ReplyDao replyDao;
 	private final UserDao userDao;
 	private final MessageDao messageDao;
-	private final CoursewareDao coursewareDao;
 	private final Map<Long, CoursePO> coursesToReviewed = Collections.synchronizedMap(new HashMap<>());
 	private Long id = 0L;
 	private final Boolean lock = true;
 
 	@Autowired
-	public CourseServiceImpl(CourseDao courseDao, TeacherDao teacherDao, PostDao postDao, ReplyDao replyDao, UserDao userDao, MessageDao messageDao, CoursewareDao coursewareDao) {
+	public CourseServiceImpl(CourseDao courseDao, TeacherDao teacherDao, PostDao postDao, ReplyDao replyDao, UserDao userDao, MessageDao messageDao) {
 		this.courseDao = courseDao;
 		this.teacherDao = teacherDao;
 		this.postDao = postDao;
 		this.replyDao = replyDao;
 		this.userDao = userDao;
 		this.messageDao = messageDao;
-		this.coursewareDao = coursewareDao;
 	}
 
 	@Override
@@ -80,17 +78,6 @@ public class CourseServiceImpl implements CourseService {
 	}
 
 	@Override
-	public Long uploadCourseware(Long courseId, String name) {
-		return coursewareDao.save(new CoursewarePO(courseId, name)).getId();
-	}
-
-	@Override
-	public String getFilePathByCoursewareId(Long coursewareId) {
-		CoursewarePO coursewarePO = coursewareDao.findOne(coursewareId);
-		return "/courseware/" + coursewarePO.getCourseId() + "/" + coursewarePO.getName();
-	}
-
-	@Override
 	public List<TeacherCourseVO> getCourseToReviewByTeacherId(Long teacherId) {
 		List<TeacherCourseVO> ret = new ArrayList<>();
 		this.coursesToReviewed.forEach((id, coursePO) -> {
@@ -105,9 +92,8 @@ public class CourseServiceImpl implements CourseService {
 	@Override
 	public List<NewCourseVO> getAllCoursesToReview() {
 		List<NewCourseVO> ret = new ArrayList<>();
-		this.coursesToReviewed.forEach((id, course) -> {
-			ret.add(new NewCourseVO(id, course.getGrade(), course.getName(), teacherDao.findOne(course.getTeacherId()).getName()));
-		});
+		this.coursesToReviewed.forEach((id, course) ->
+				ret.add(new NewCourseVO(id, course.getGrade(), course.getName(), teacherDao.findOne(course.getTeacherId()).getName())));
 		return ret;
 	}
 

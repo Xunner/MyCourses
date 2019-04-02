@@ -1,5 +1,6 @@
 package controller;
 
+import enums.PublishMethod;
 import enums.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -177,8 +178,15 @@ public class MainController {
 	public Map<String, Object> addPost(@RequestBody Map<String, Object> params) {
 		System.out.println("addPost: " + params.toString());
 		Map<String, Object> ret = new HashMap<>();
-		PostVO post = courseService.addPost(Long.valueOf((String) params.get("userId")),
-				((Integer) params.get("courseId")).longValue(), (String) params.get("title"), (String) params.get("text"));
+		Object o = params.get("courseId");
+		Long courseId;
+		if (o == null) {
+			courseId = classService.getCourseIdByClassId(((Integer) params.get("classId")).longValue());
+		} else {
+			courseId = ((Integer) o).longValue();
+		}
+		PostVO post = courseService.addPost(Long.valueOf((String) params.get("userId")), courseId,
+				(String) params.get("title"), (String) params.get("text"));
 		ret.put("result", (post == null ? Result.FAILED : Result.SUCCESS));
 		ret.put("post", post);
 		return ret;
@@ -232,7 +240,7 @@ public class MainController {
 	public Result selectClass(@RequestBody Map<String, Object> params) {
 		System.out.println("selectClass: " + params.toString());
 		Long classId = ((Integer) params.get("classId")).longValue();
-		Long studentId = ((Integer) params.get("userId")).longValue();
+		Long studentId = Long.valueOf((String) params.get("studentId"));
 		return classService.takeClass(studentId, classId);
 	}
 
@@ -240,7 +248,7 @@ public class MainController {
 	public Result cancelClassSelection(@RequestBody Map<String, Object> params) {
 		System.out.println("cancelClassSelection: " + params.toString());
 		Long classId = ((Integer) params.get("classId")).longValue();
-		Long studentId = ((Integer) params.get("userId")).longValue();
+		Long studentId = Long.valueOf((String) params.get("studentId"));
 		return classService.quitClass(studentId, classId);
 	}
 
@@ -251,8 +259,7 @@ public class MainController {
 
 	@RequestMapping(value = "/statistics", method = RequestMethod.GET)
 	public Map<String, Object> getStatistics(@RequestParam(value = "adminId") Long adminId) {
-		// TODO
-		return null;
+		return userService.getStatistics(adminId);
 	}
 
 	@RequestMapping(value = "/TeacherCourses", method = RequestMethod.GET)
@@ -280,5 +287,27 @@ public class MainController {
 			ret.put("result", Result.NOT_EXIST);
 		}
 		return ret;
+	}
+
+	@RequestMapping(value = "/getClassScores", method = RequestMethod.GET)
+	public Map<String, Object> getClassScores(@RequestParam(value = "classId") Long classId) {
+		System.out.println("getClassScores: " + classId);
+		Map<String, Object> ret = new HashMap<>();
+		List<ClassScore> scores = classService.getClassScores(classId);
+		if (scores == null) {
+			ret.put("result", Result.FAILED);
+		} else {
+			ret.put("result", Result.SUCCESS);
+			ret.put("scores", scores);
+		}
+		return ret;
+	}
+
+	@RequestMapping(value = "/updateScores", method = RequestMethod.POST)
+	public Result updateScores(@RequestParam(value = "classId") Long classId,
+	                             @RequestParam(value = "publishMethod") String publishMethod,
+	                             @RequestParam(value = "scores") List<ClassScore> scores) {
+		System.out.println("updateScores: " + scores.toString());
+		return classService.updateClassScores(classId, PublishMethod.valueOf(publishMethod), scores);
 	}
 }

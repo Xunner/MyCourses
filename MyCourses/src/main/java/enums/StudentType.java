@@ -7,7 +7,6 @@ package enums;
  *
  * @author 巽
  **/
-
 public enum StudentType {
 	UNDERGRADUATE("本科生"), GRADUATE("研究生");
 
