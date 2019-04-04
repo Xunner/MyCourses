@@ -328,9 +328,12 @@ public class ClassServiceImpl implements ClassService {
 		ret.put("checkNewCourse", courseService.getAllCoursesToReview());
 		// 装载待审核开课
 		List<NewClassVO> classVOS = new ArrayList<>();
-		this.classesToReviewed.forEach((id, classPO) ->
-				classVOS.add(new NewClassVO(id, courseDao.findOne(classPO.getCourseId()).getName(), classPO.getTerm(),
-						classPO.getClassOrder(), classPO.getStartTime(), classPO.getEndTime())));
+		this.classesToReviewed.forEach((id, classPO) -> {
+			CoursePO coursePO = courseDao.findOne(classPO.getCourseId());
+			classVOS.add(new NewClassVO(id, coursePO.getName(), classPO.getTerm(),
+					classPO.getClassOrder(), classPO.getStartTime(), classPO.getEndTime(),
+					teacherDao.findOne(coursePO.getTeacherId()).getName()));
+		});
 		ret.put("checkNewClass", classVOS);
 		ret.put("result", Result.SUCCESS);
 		return ret;
