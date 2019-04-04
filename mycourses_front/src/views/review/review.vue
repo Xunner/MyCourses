@@ -25,8 +25,8 @@
           <el-table-column prop="teacher" label="教师" sortable></el-table-column>
           <el-table-column prop="term" label="学期" sortable></el-table-column>
           <el-table-column prop="classOrder" label="班级" sortable></el-table-column>
-          <el-table-column prop="startTime" label="开课时间" sortable></el-table-column>
-          <el-table-column prop="endTime" label="结课时间" sortable></el-table-column>
+          <el-table-column prop="startTime" label="开课时间" :formatter="startDateFormatter" sortable></el-table-column>
+          <el-table-column prop="endTime" label="结课时间" :formatter="endDateFormatter" sortable></el-table-column>
           <el-table-column label="操作">
             <template slot-scope="scope">
               <el-button size="mini" type="success" @click="clickPassClass(scope.$index, scope.row)">通过</el-button>
@@ -67,9 +67,9 @@ export default {
         {courseId: 3, grade: 1, name: '课程2', teacher: '教师1'},
         {courseId: 2, grade: 3, name: '课程3', teacher: '教师2'}],
       checkNewClass: [
-        {classId: 1, name: '课程1', teacher: '教师1', term: 3, classOrder: 1, startTime: '2019-03-01', endTime: '2019-06-30'},
-        {classId: 2, name: '课程2', teacher: '教师2', term: 1, classOrder: 1, startTime: '2019-03-01', endTime: '2019-06-30'},
-        {classId: 4, name: '课程2', teacher: '教师2', term: 1, classOrder: 2, startTime: '2019-03-01', endTime: '2019-06-30'}]
+        {classId: 1, name: '课程1', teacher: '教师1', term: 3, classOrder: 1, startTime: [2019, 3, 1], endTime: [2019, 6, 30]},
+        {classId: 2, name: '课程2', teacher: '教师2', term: 1, classOrder: 1, startTime: [2019, 3, 1], endTime: [2019, 6, 30]},
+        {classId: 4, name: '课程2', teacher: '教师2', term: 1, classOrder: 2, startTime: [2019, 3, 1], endTime: [2019, 7, 7]}]
     }
   },
   methods: {
@@ -120,6 +120,14 @@ export default {
       }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
       })
+    },
+    startDateFormatter (row) {
+      console.log(row.startTime)
+      console.log(row.startTime.slice(0, 3).join('-'))
+      return row.startTime.slice(0, 3).join('-')
+    },
+    endDateFormatter (row) {
+      return row.endTime.slice(0, 3).join('-')
     }
   }
 }
