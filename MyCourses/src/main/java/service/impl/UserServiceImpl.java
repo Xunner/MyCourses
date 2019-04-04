@@ -47,6 +47,52 @@ public class UserServiceImpl implements UserService {
 		this.studentDao = studentDao;
 		this.teacherDao = teacherDao;
 		this.logDao = logDao;
+
+		this.generateLoginLogs();   // 造假数据以充实统计图表，需原装数据库配合，注释掉此行以关闭此功能
+	}
+
+	private void generateLoginLogs() {
+		System.out.println("自动检测近7天登录数据是否过少，是则自动填充数据。");
+		System.out.println("\t此功能需原装数据库配合，否则会报错。");
+		System.out.println("\t若要关闭此功能，请查看UserServiceImpl类。");
+		LocalDate now = LocalDate.now();
+		boolean generated = false;
+		Random rand = new Random();
+		int num = 0;
+		for (LocalDate date = now.minusDays(7); date.isBefore(now); date = date.plusDays(1)) {
+			LocalDateTime start = date.atTime(0, 0, 0);
+			LocalDateTime end = date.atTime(23, 59, 59);
+			int cnt = logDao.countByTimeBetweenAndObjectClassAndOperationType(start, end,
+					TeacherPO.class.getSimpleName(), OperationType.LOGIN);
+			if (cnt < 10) {
+				for (int i = rand.nextInt(40) + 10; i > 0; i--, num++) {
+					logDao.save(new LogPO(date.atTime(rand.nextInt(24), rand.nextInt(60)), 3L,
+							3L, TeacherPO.class.getSimpleName(), OperationType.LOGIN));
+				}
+				generated = true;
+			}
+			cnt = logDao.countByTimeBetweenAndObjectClassAndOperationType(start, end,
+					StudentType.UNDERGRADUATE.name(), OperationType.LOGIN);
+			if (cnt < 10) {
+				for (int i = rand.nextInt(100) + 50; i > 0; i--, num++) {
+					logDao.save(new LogPO(date.atTime(rand.nextInt(24), rand.nextInt(60)), 1L,
+							1L, StudentType.UNDERGRADUATE.name(), OperationType.LOGIN));
+				}
+				generated = true;
+			}
+			cnt = logDao.countByTimeBetweenAndObjectClassAndOperationType(start, end,
+					StudentType.GRADUATE.name(), OperationType.LOGIN);
+			if (cnt < 10) {
+				for (int i = rand.nextInt(70) + 30; i > 0; i--, num++) {
+					logDao.save(new LogPO(date.atTime(rand.nextInt(24), rand.nextInt(60)), 2L,
+							2L, StudentType.GRADUATE.name(), OperationType.LOGIN));
+				}
+				generated = true;
+			}
+		}
+		if (generated) {
+			System.out.println("\t检测到近7天登录数据过少，自动填充数据功能已启动，共填充" + num + "条数据。");
+		}
 	}
 
 	@Override
@@ -73,13 +119,11 @@ public class UserServiceImpl implements UserService {
 		if (!email.matches("^[a-zA-Z0-9]+@smail.nju.edu.cn$")) {
 			return Result.FAILED;
 		}
-		if (userDao.existsByEmailAndDeletedFalse(email)) {
-			return Result.EXIST;
-		}
+		if (this.existEmail(email)) return Result.EXIST;
 		StudentType studentType = (email.charAt(0) == 'M' ? StudentType.GRADUATE : StudentType.UNDERGRADUATE);
 		String code = createUUID();
 		activationStudent.put(code, new StudentPO(email, name, password, false, studentId, studentType));
-		activationDeadline.put(LocalDateTime.now().plusMinutes(3), code);
+		activationDeadline.put(LocalDateTime.now().plusMinutes(2), code);
 		new Thread(new MailUtil(email, code)).start();
 		return Result.SUCCESS;
 	}
@@ -89,14 +133,25 @@ public class UserServiceImpl implements UserService {
 		if (!email.matches("^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\\.[a-zA-Z0-9_-]+)+$")) {
 			return Result.FAILED;
 		}
-		if (userDao.existsByEmailAndDeletedFalse(email)) {
-			return Result.EXIST;
-		}
+		if (this.existEmail(email)) return Result.EXIST;
 		String code = createUUID();
 		activationTeacher.put(code, new TeacherPO(email, name, password, false));
-		activationDeadline.put(LocalDateTime.now().plusMinutes(3), code);
+		activationDeadline.put(LocalDateTime.now().plusMinutes(2), code);
 		new Thread(new MailUtil(email, code)).start();
 		return Result.SUCCESS;
+	}
+
+	private boolean existEmail(String email) {
+		if (userDao.existsByEmailAndDeletedFalse(email)) {
+			return true;
+		}
+		for (StudentPO studentPO : activationStudent.values()) {
+			if (email.equals(studentPO.getEmail())) return true;
+		}
+		for (TeacherPO teacherPO : activationTeacher.values()) {
+			if (email.equals(teacherPO.getEmail())) return true;
+		}
+		return false;
 	}
 
 	@Override
@@ -172,8 +227,8 @@ public class UserServiceImpl implements UserService {
 		LocalDate now = LocalDate.now();
 		for (LocalDate date = now.minusDays(7); date.isBefore(now); date = date.plusDays(1)) {
 			loginCountX.add(date.toString());
-			LocalDateTime start = now.atTime(0, 0, 0);
-			LocalDateTime end = now.atTime(23, 59, 59);
+			LocalDateTime start = date.atTime(0, 0, 0);
+			LocalDateTime end = date.atTime(23, 59, 59);
 			teacher.add(logDao.countByTimeBetweenAndObjectClassAndOperationType(start, end,
 					TeacherPO.class.getSimpleName(), OperationType.LOGIN));
 			undergraduate.add(logDao.countByTimeBetweenAndObjectClassAndOperationType(start, end,
@@ -194,12 +249,15 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public void handlePassedActivation() {
 		LocalDateTime now = LocalDateTime.now();
-		activationDeadline.forEach((deadline, code) -> {
-			if (now.isAfter(deadline)) {
-				activationStudent.remove(code);
-				activationTeacher.remove(code);
+		for (Iterator<Map.Entry<LocalDateTime, String>> iterator = activationDeadline.entrySet().iterator(); iterator.hasNext(); ) {
+			Map.Entry<LocalDateTime, String> entry = iterator.next();
+			if (now.isAfter(entry.getKey())) {
+				System.out.println("删除过期注册激活：code=" + entry.getValue() + ", deadline=" + entry.getKey());
+				activationStudent.remove(entry.getValue());
+				activationTeacher.remove(entry.getValue());
+				iterator.remove();
 			}
-		});
+		}
 	}
 
 	private static String createUUID() {

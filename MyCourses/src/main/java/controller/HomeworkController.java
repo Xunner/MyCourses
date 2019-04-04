@@ -6,9 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import service.ClassService;
 import vo.HomeworkScore;
+import vo.HomeworkScorePublishVO;
 import vo.HomeworkVO;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,10 +44,11 @@ public class HomeworkController {
 	}
 
 	@RequestMapping(value = "/getHomeworkScores", method = RequestMethod.GET)
-	public Map<String, Object> getHomeworkScores(@RequestParam(value = "homeworkId") Long homeworkId) {
-		System.out.println("getHomeworkScores: " + homeworkId);
+	public Map<String, Object> getHomeworkScores(@RequestParam(value = "userId") Long userId,
+	                                             @RequestParam(value = "homeworkId") Long homeworkId) {
+		System.out.println("getHomeworkScores: " + userId + "-" + homeworkId);
 		Map<String, Object> ret = new HashMap<>();
-		List<HomeworkScore> homeworkScores = classService.getHomeworkScores(homeworkId);
+		List<HomeworkScore> homeworkScores = classService.getHomeworkScores(userId, homeworkId);
 		if (homeworkScores == null) {
 			ret.put("result", Result.FAILED);
 		} else {
@@ -58,10 +59,8 @@ public class HomeworkController {
 	}
 
 	@RequestMapping(value = "/updateHwScores", method = RequestMethod.POST)
-	public Result updateHwScores(@RequestParam(value = "homeworkId") Long homeworkId,
-	                             @RequestParam(value = "publishMethod") String publishMethod,
-	                             @RequestParam(value = "scores") List<HomeworkScore> scores) {
-		System.out.println("updateHwScores: " + scores.toString());
-		return classService.updateHomeworkScores(homeworkId, PublishMethod.valueOf(publishMethod), scores);
+	public Result updateHwScores(@RequestBody HomeworkScorePublishVO vo) {
+		System.out.println("updateHwScores: " + vo.toString());
+		return classService.updateHomeworkScores(vo.homeworkId, PublishMethod.valueOf(vo.publishMethod), vo.scores);
 	}
 }

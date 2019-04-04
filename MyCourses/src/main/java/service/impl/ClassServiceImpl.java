@@ -69,6 +69,7 @@ public class ClassServiceImpl implements ClassService {
 		}
 		List<ClassProfile> ret = new ArrayList<>();
 		for (ClassPO classPO : student.getClassScores().keySet()) {
+			if (classPO.getClassState() == ClassState.NOT_STARTED) continue;
 			List<HomeworkProfile> homeworkProfiles = new ArrayList<>();
 			out:
 			for (HomeworkPO homeworkPO : classPO.getHomework()) {
@@ -160,7 +161,7 @@ public class ClassServiceImpl implements ClassService {
 		TeacherPO teacherPO = teacherDao.findOne(coursePO.getTeacherId());
 		ClassInfo ret = new ClassInfo(classPO.getId(), coursePO.getName(), teacherPO.getName(), coursePO.getGrade(),
 				classPO.getTerm(), classPO.getClassOrder(), classPO.getStartTime(), classPO.getEndTime(),
-				classPO.getStudentScores().size());
+				classPO.getStudentScores().size(), classPO.getPublishMethod());
 		// 装载homework
 		List<HomeworkVO> homework = new ArrayList<>();
 		for (HomeworkPO homeworkPO : classPO.getHomework()) {
@@ -343,6 +344,8 @@ public class ClassServiceImpl implements ClassService {
 		HomeworkPO homeworkPO = homeworkDao.save(new HomeworkPO(vo.classId, vo.name, vo.description, vo.deadline,
 				vo.sizeLimit, sb.toString()));
 		vo.id = homeworkPO.getId();
+		vo.numberSubmitted = 0;
+		vo.publishMethod = PublishMethod.NOT_YET;
 		return vo;
 	}
 
@@ -352,25 +355,28 @@ public class ClassServiceImpl implements ClassService {
 	}
 
 	@Override
-	public List<HomeworkScore> getHomeworkScores(Long HomeworkId) {
+	public List<HomeworkScore> getHomeworkScores(Long userId, Long HomeworkId) {
+		UserPO userPO = userDao.findOne(userId);
 		HomeworkPO homeworkPO = homeworkDao.findOne(HomeworkId);
-		if (homeworkPO == null) return null;
+		if (userPO == null || homeworkPO == null) return null;
 		List<HomeworkScore> homeworkScores = new ArrayList<>();
 		final Map<StudentPO, Double> studentScores = homeworkPO.getStudentScores();
-		for (StudentPO studentPO : classDao.findOne(homeworkPO.getClassId()).getStudentScores().keySet()) {
-			Double score = studentScores.get(studentPO);
-			String sid = studentPO.getEmail();
-			if (score == null) {
-				homeworkScores.add(new HomeworkScore(0L, sid.substring(0, sid.indexOf('@')), 0d));
-			} else {
-				for (SubmissionPO submissionPO : homeworkPO.getSubmissions()) {
-					if (submissionPO.getStudentId().equals(studentPO.getId())) {
-						homeworkScores.add(new HomeworkScore(submissionPO.getId(), sid.substring(0, sid.indexOf('@')), score));
-						break;
-					}
-				}
+		if (homeworkPO.getPublishMethod() == PublishMethod.ONLY_FOR_ME && userPO instanceof StudentPO) {
+			// 仅给学生查看本人成绩
+			Double score = studentScores.get(userPO);
+			String sid = this.getStrId(userPO.getEmail());
+			System.out.println("仅给学生查看本人成绩: " + score + "-" + sid);
+			homeworkScores.add(new HomeworkScore(userPO.getId(), sid, score == null ? 0d : score));
+		} else {
+			// 完全公开或教师查看
+			System.out.println("完全公开或教师查看");
+			for (StudentPO studentPO : classDao.findOne(homeworkPO.getClassId()).getStudentScores().keySet()) {
+				Double score = studentScores.get(studentPO);
+				String sid = this.getStrId(studentPO.getEmail());
+				homeworkScores.add(new HomeworkScore(0L, sid, score == null ? 0d : score));
 			}
 		}
+		System.out.println(homeworkScores);
 		return homeworkScores;
 	}
 
@@ -379,32 +385,49 @@ public class ClassServiceImpl implements ClassService {
 		HomeworkPO homeworkPO = homeworkDao.findOne(homeworkId);
 		if (homeworkPO == null) return Result.NOT_EXIST;
 		homeworkPO.setPublishMethod(publishMethod);
-		for (Map.Entry<StudentPO, Double> entry : homeworkPO.getStudentScores().entrySet()) {
-			String sid = userService.getEmailPrefixById(entry.getKey().getId());
-			for (HomeworkScore homeworkScore : scores) {
+		for (HomeworkScore homeworkScore : scores) {
+			boolean found = false;
+			Map<StudentPO, Double> homeworkPOStudentScores = homeworkPO.getStudentScores();
+			for (Map.Entry<StudentPO, Double> entry : homeworkPOStudentScores.entrySet()) {
+				String sid = userService.getEmailPrefixById(entry.getKey().getId());
+				System.out.println(homeworkScore.studentId + "-" + sid);
 				if (sid.equals(homeworkScore.studentId)) {
 					entry.setValue(homeworkScore.score);
+					found = true;
 					break;
 				}
 			}
+			if (!found) {
+				StudentPO studentPO = studentDao.findByEmailAndDeletedFalse(homeworkScore.studentId + "@smail.nju.edu.cn");
+				if (studentPO == null) {
+					System.out.println("错误，未找到未销号学生：" + homeworkScore.studentId + "@smail.nju.edu.cn");
+				} else {
+					homeworkPOStudentScores.put(studentPO, homeworkScore.score);
+				}
+			}
 		}
+		homeworkDao.save(homeworkPO);
 		return Result.SUCCESS;
 	}
 
 	@Override
-	public List<ClassScore> getClassScores(Long classId) {
+	public List<ClassScore> getClassScores(Long userId, Long classId) {
+		UserPO userPO = userDao.findOne(userId);
 		ClassPO classPO = classDao.findOne(classId);
-		if (classPO == null) return null;
+		if (userPO == null || classPO == null) return null;
 		List<ClassScore> classScores = new ArrayList<>();
 		final Map<StudentPO, Double> studentScores = classPO.getStudentScores();
-		for (StudentPO studentPO : studentScores.keySet()) {
-			Double score = studentScores.get(studentPO);
-			String sid = studentPO.getEmail();
-			sid = sid.substring(0, sid.indexOf('@'));
-			if (score == null) {
-				classScores.add(new ClassScore(studentPO.getId(), sid, 0d));
-			} else {
-				classScores.add(new ClassScore(studentPO.getId(), sid, score));
+		if (classPO.getPublishMethod() == PublishMethod.ONLY_FOR_ME && userPO instanceof StudentPO) {
+			// 仅给学生查看本人成绩
+			Double score = studentScores.get(userPO);
+			String sid = this.getStrId(userPO.getEmail());
+			classScores.add(new ClassScore(userPO.getId(), sid, score == null ? 0d : score));
+		} else {
+			// 完全公开或教师查看
+			for (Map.Entry<StudentPO, Double> entry : studentScores.entrySet()) {
+				Double score = entry.getValue();
+				String sid = this.getStrId(entry.getKey().getEmail());
+				classScores.add(new ClassScore(entry.getKey().getId(), sid, score == null ? 0d : score));
 			}
 		}
 		return classScores;
@@ -416,15 +439,18 @@ public class ClassServiceImpl implements ClassService {
 		if (classPO == null) return Result.NOT_EXIST;
 		classPO.setPublishMethod(publishMethod);
 		for (Map.Entry<StudentPO, Double> entry : classPO.getStudentScores().entrySet()) {
-			String sid = entry.getKey().getEmail();
-			sid = sid.substring(0, sid.indexOf('@'));
 			for (ClassScore ClassScore : scores) {
-				if (sid.equals(ClassScore.strId)) {
+				if (entry.getKey().getId().equals(ClassScore.studentId)) {
 					entry.setValue(ClassScore.score);
 					break;
 				}
 			}
 		}
+		classDao.save(classPO);
 		return Result.SUCCESS;
+	}
+
+	private String getStrId(String email) {
+		return email.substring(0, email.indexOf('@'));
 	}
 }

@@ -15,4 +15,6 @@ import po.StudentPO;
 @Repository
 public interface StudentDao extends JpaRepository<StudentPO, Long> {
 	int countByDeletedFalseAndStudentType(StudentType studentType);
+
+	StudentPO findByEmailAndDeletedFalse(String email);
 }

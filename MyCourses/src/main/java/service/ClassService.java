@@ -42,11 +42,11 @@ public interface ClassService {
 
 	Long getCourseIdByClassId(Long classId);
 
-	List<HomeworkScore> getHomeworkScores(Long HomeworkId);
+	List<HomeworkScore> getHomeworkScores(Long userId, Long HomeworkId);
 
 	Result updateHomeworkScores(Long homeworkId, PublishMethod publishMethod, List<HomeworkScore> scores);
 
-	List<ClassScore> getClassScores(Long classId);
+	List<ClassScore> getClassScores(Long userId, Long classId);
 
 	Result updateClassScores(Long classId, PublishMethod publishMethod, List<ClassScore> scores);
 }

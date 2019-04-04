@@ -1,5 +1,7 @@
 package vo;
 
+import enums.PublishMethod;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,11 +22,12 @@ public class ClassInfo {
 	public LocalDateTime startTime;
 	public LocalDateTime endTime;
 	public Integer number;
+	public PublishMethod publishMethod;
 	public List<CoursewareVO> coursewares;
 	public List<HomeworkVO> homework;
 	public List<PostVO> posts;
 
-	public ClassInfo(Long id, String name, String teacherName, Integer grade, Integer term, Integer classOrder, LocalDateTime startTime, LocalDateTime endTime, Integer number) {
+	public ClassInfo(Long id, String name, String teacherName, Integer grade, Integer term, Integer classOrder, LocalDateTime startTime, LocalDateTime endTime, Integer number, PublishMethod publishMethod) {
 		this.id = id;
 		this.name = name;
 		this.teacherName = teacherName;
@@ -34,6 +37,7 @@ public class ClassInfo {
 		this.startTime = startTime;
 		this.endTime = endTime;
 		this.number = number;
+		this.publishMethod = publishMethod;
 	}
 
 }

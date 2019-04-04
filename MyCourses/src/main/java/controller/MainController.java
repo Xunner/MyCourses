@@ -1,6 +1,5 @@
 package controller;
 
-import enums.PublishMethod;
 import enums.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -57,17 +56,17 @@ public class MainController {
 	}
 
 	@RequestMapping(value = "/register", method = RequestMethod.POST)
-	public String register(@RequestBody RegisterVO registerVO) {
+	public Result register(@RequestBody RegisterVO registerVO) {
 		System.out.println(registerVO);
 		switch (registerVO.userType) {
 			case "student":
-				return userService.registerStudent(registerVO.email, registerVO.name, registerVO.password, registerVO.studentId).name();
+				return userService.registerStudent(registerVO.email, registerVO.name, registerVO.password, registerVO.studentId);
 			case "teacher":
-				return userService.registerTeacher(registerVO.email, registerVO.name, registerVO.password).name();
+				return userService.registerTeacher(registerVO.email, registerVO.name, registerVO.password);
 			default:
 				System.out.println("错误：未知用户类型 " + registerVO.userType);
 		}
-		return Result.FAILED.name();
+		return Result.FAILED;
 	}
 
 	@RequestMapping(value = "/activate/{code}", method = RequestMethod.GET)
@@ -290,10 +289,10 @@ public class MainController {
 	}
 
 	@RequestMapping(value = "/getClassScores", method = RequestMethod.GET)
-	public Map<String, Object> getClassScores(@RequestParam(value = "classId") Long classId) {
-		System.out.println("getClassScores: " + classId);
+	public Map<String, Object> getClassScores(@RequestParam(value = "userId") Long userId, @RequestParam(value = "classId") Long classId) {
+		System.out.println("getClassScores: " + userId + "-" + classId);
 		Map<String, Object> ret = new HashMap<>();
-		List<ClassScore> scores = classService.getClassScores(classId);
+		List<ClassScore> scores = classService.getClassScores(userId, classId);
 		if (scores == null) {
 			ret.put("result", Result.FAILED);
 		} else {
@@ -304,10 +303,8 @@ public class MainController {
 	}
 
 	@RequestMapping(value = "/updateScores", method = RequestMethod.POST)
-	public Result updateScores(@RequestParam(value = "classId") Long classId,
-	                             @RequestParam(value = "publishMethod") String publishMethod,
-	                             @RequestParam(value = "scores") List<ClassScore> scores) {
-		System.out.println("updateScores: " + scores.toString());
-		return classService.updateClassScores(classId, PublishMethod.valueOf(publishMethod), scores);
+	public Result updateScores(@RequestBody ClassScorePublishVO vo) {
+		System.out.println("updateScores: " + vo.toString());
+		return classService.updateClassScores(vo.classId, vo.publishMethod, vo.scores);
 	}
 }
