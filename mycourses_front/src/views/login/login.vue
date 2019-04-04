@@ -23,17 +23,17 @@
         <el-form-item label="邮箱" prop="email">
           <el-input class="input" type="text" placeholder="必须为NJU邮箱" v-model="registerForm.email"></el-input>
         </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input class="input" type="password" v-model="registerForm.password"></el-input>
-        </el-form-item>
-        <el-form-item label="确认密码" prop="checkPassword">
-          <el-input class="input" type="password" v-model="registerForm.checkPassword"></el-input>
+        <el-form-item label="密码" prop="pwd">
+          <el-input class="input" type="password" v-model="registerForm.pwd" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="姓名" prop="newName">
           <el-input class="input" type="text" v-model="registerForm.newName"></el-input>
         </el-form-item>
         <el-form-item label="学号" prop="studentId">
           <el-input class="input" type="text" v-model="registerForm.studentId"></el-input>
+        </el-form-item>
+        <el-form-item label="确认密码" prop="checkPassword">
+          <el-input class="input" type="password" v-model="registerForm.checkPassword" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="身份" prop="userType">
           <el-radio-group v-model="registerForm.userType">
@@ -92,7 +92,7 @@ export default {
             'userType': this.registerForm.userType,
             'email': this.registerForm.email,
             'name': this.registerForm.newName,
-            'password': this.registerForm.password,
+            'password': this.registerForm.pwd,
             'studentId': this.registerForm.studentId
           }
           this.$http.post('/MyCourses/register', data).then((res) => {
@@ -103,8 +103,7 @@ export default {
               // ↓this可能出事！
               this.$refs[formName].resetFields()
               /* 注册成功之后再跳回登录页 */
-              this.showRegister = false
-              this.showLogin = true
+              this.isLogIn = true
             } else {
               this.$message.error('网络错误，请刷新或稍后再试')
               console.log('未知错误：' + res.data)
@@ -126,20 +125,29 @@ export default {
   },
   data () {
     let validateEmail = (rule, value, callback) => {
-      if (this.registerForm.email.match(/^[a-zA-Z0-9]+@smail.nju.edu.cn$/)) {
+      console.log('validate email')
+      if (value === '') {
+        callback(new Error('请输入完整NJU邮箱'))
+      } else if (value.match(/^[a-zA-Z0-9]+@smail.nju.edu.cn$/)) {
         callback()
       } else {
         callback(new Error('邮箱格式不符!'))
       }
     }
     let validatePassword = (rule, value, callback) => {
-      if (this.registerForm.checkPassword !== '') {
+      console.log('validate pwd')
+      if (value === '') {
+        callback(new Error('请输入密码'))
+      } else if (this.registerForm.checkPassword !== '') {
         this.$refs.registerForm.validateField('checkPassword')
       }
       callback()
     }
     let validateCheckPassword = (rule, value, callback) => {
-      if (value !== this.registerForm.password) {
+      console.log('validate checkPassword')
+      if (value === '') {
+        callback(new Error('请再次输入密码'))
+      } else if (value !== this.registerForm.pwd) {
         callback(new Error('两次输入密码不一致!'))
       } else {
         callback()
@@ -157,20 +165,17 @@ export default {
       },
       registerForm: {
         email: '',
-        newName: '',
-        password: '',
+        pwd: '',
         checkPassword: '',
-        userType: 'student',
-        studentId: ''
+        newName: '',
+        studentId: '',
+        userType: ''
       },
       registerRules: {
-        email: [{required: true, message: '请输入完整NJU邮箱', trigger: 'blur'},
-          {validator: validateEmail, trigger: 'blur'}],
-        password: [{required: true, message: '请输入新密码', trigger: 'blur'},
-          {validator: validatePassword, trigger: 'blur'}],
-        checkPassword: [{required: true, message: '请再次输入密码', trigger: 'blur'},
-          {validator: validateCheckPassword, trigger: 'blur'}],
-        userType: [{required: true, message: '请选择您的身份', trigger: 'blur'}]
+        email: [{validator: validateEmail, trigger: 'blur'}],
+        pwd: [{validator: validatePassword, trigger: 'change'}],
+        checkPassword: [{validator: validateCheckPassword, trigger: 'change'}],
+        userType: [{required: true, message: '请选择您的身份', trigger: 'change'}]
       }
     }
   }

@@ -27,6 +27,10 @@
               <div class="left">开课时间：{{classInfo.startTime[0]}}年{{classInfo.startTime[1]}}月{{classInfo.startTime[2]}}日</div>
               <div class="left">结课时间：{{classInfo.endTime[0]}}年{{classInfo.endTime[1]}}月{{classInfo.endTime[2]}}日</div>
               <div class="left">学生人数：{{classInfo.number}}</div>
+              <div class="left" v-if="classInfo.publishMethod !== 'NOT_YET'">成绩：已公布
+                <i v-if="classInfo.publishMethod === 'ONLY_FOR_ME'">（仅可查看本人）</i>
+                <i v-else-if="classInfo.publishMethod === 'FULLY_OPEN'">（完全公开）</i>
+              </div>
             </el-card>
             <el-card class="class-info-card">
               <div slot="header" style="text-align: left">论坛</div>
@@ -77,7 +81,16 @@
               </el-dialog>
             </el-card>
             <el-button @click="toProfile">返回</el-button>
+            <el-button @click="clickClassScores" v-if="classInfo.publishMethod !== 'NOT_YET'">查看成绩</el-button>
             <el-button @click="quitClass(classInfo.id)">退课</el-button>
+            <!--弹窗：查看成绩-->
+            <el-dialog title="查看成绩" :visible.sync="classScoresVisible" style="text-align: center" center>
+              <el-table :data="classScore.scores" max-height="450px" :default-sort="{prop: 'strId', order: 'ascending'}" stripe>
+                <el-table-column property="strId" label="学号" sortable></el-table-column>
+                <el-table-column property="score" label="成绩" sortable></el-table-column>
+              </el-table>
+              <el-button style="margin-top: 16px" @click="classScoresVisible = false">返回</el-button>
+            </el-dialog>
           </el-col>
           <el-col :span="12">
             <el-card class="class-info-card">
@@ -97,6 +110,12 @@
                   </template>
                   <div class="left">{{homework.description}}</div>
                   <div class="left">截止日期：{{dateTime(homework.deadline)}}</div>
+                  <div class="left" v-if="homework.publishMethod !== 'NOT_YET'">成绩已公布
+                    <i v-if="homework.publishMethod === 'ONLY_FOR_ME'">（仅可查看本人）</i>
+                    <i v-else-if="homework.publishMethod === 'FULLY_OPEN'">（完全公开）</i>
+                  </div>
+                  <el-button style="margin-top: 16px" v-if="homework.publishMethod !== 'NOT_YET'"
+                             @click="clickHwScores(homework.id)">查看作业成绩</el-button>
                   <el-button style="margin-top: 16px" @click="downloadSubmission(homework.submissionId)"
                              v-show="homework.submissionId !== 0">下载作业</el-button>
                   <el-upload :data="{studentId: userId, homeworkId: homework.id}" action="/MyCourses/submitHomework"
@@ -104,14 +123,22 @@
                              v-show="homework.submissionId === 0" style="margin-top: 15px" drag>
                     <i class="el-icon-upload"></i>
                     <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-                    <div class="el-upload__tip" slot="tip">只能上传一个
-                      <div v-if="homework.typeRestriction.length > 0 && homework.typeRestriction[0].length > 0">
+                    <div class="el-upload__tip" slot="tip">只能上传一个<div
+                      v-if="homework.typeRestriction.length > 0 && homework.typeRestriction[0].length > 0">
                         {{homework.typeRestriction.join('/')}}</div>文件，且不超过{{homework.sizeLimit}}MB
                     </div>
                   </el-upload>
                 </el-collapse-item>
               </el-collapse>
             </el-card>
+            <!--弹窗：查看作业成绩-->
+            <el-dialog title="作业成绩" :visible.sync="homeworkScoresVisible" style="text-align: center" center>
+              <el-table :data="homeworkScore.homeworkScores" max-height="450px" :default-sort="{prop: 'studentId', order: 'ascending'}" stripe>
+                <el-table-column property="studentId" label="学号" sortable></el-table-column>
+                <el-table-column property="score" label="成绩" sortable></el-table-column>
+              </el-table>
+              <el-button style="margin-top: 16px" @click="homeworkScoresVisible = false">返回</el-button>
+            </el-dialog>
           </el-col>
         </el-row>
       </div>
@@ -190,9 +217,10 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        this.$http.post('/MyCourses/quitClass', {classId: classId, studentId: this.$cookies.get('userId')}).then(res => {
-          if (res.data.bodyText === 'SUCCESS') {
+        this.$http.post('/MyCourses/cancelClassSelection', {classId: classId, studentId: this.userId}).then(res => {
+          if (res.data === 'SUCCESS') {
             this.$message.success('退课成功！')
+            this.myClasses = this.myClasses.filter(item => item.classId !== classId)
             this.isProfile = true
           } else {
             this.$message.error('网络错误，请刷新或稍后再试')
@@ -283,6 +311,19 @@ export default {
         this.$message.error('网络错误，请刷新或稍后再试')
       }
     },
+    clickHwScores (homeworkId) {
+      this.$http.get('/MyCourses/getHomeworkScores', {'params': {userId: this.userId, homeworkId: homeworkId}}).then(res => {
+        if (res.data.result === 'SUCCESS') {
+          this.homeworkScore.id = homeworkId
+          this.homeworkScore.homeworkScores = res.data.homeworkScores
+          this.homeworkScoresVisible = true
+        } else {
+          this.$message.error('网络错误，请刷新或稍后再试')
+        }
+      }, () => {
+        this.$message.error('网络错误，请刷新或稍后再试')
+      })
+    },
     downloadSubmission (submissionId) {
       /* HTTP请求 */
       this.$http.get('/MyCourses/downloadSubmission', {params: {submissionId: submissionId}, 'responseType': 'blob'}).then((data) => {
@@ -304,6 +345,19 @@ export default {
       }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
       })
+    },
+    clickClassScores () {
+      this.$http.get('/MyCourses/getClassScores', {'params': {userId: this.userId, classId: this.classInfo.id}}).then(res => {
+        if (res.data.result === 'SUCCESS') {
+          this.classScore.scores = res.data.scores
+          this.classScore.publishMethod = this.classInfo.publishMethod
+          this.classScoresVisible = true
+        } else {
+          this.$message.error('网络错误，请刷新或稍后再试')
+        }
+      }, () => {
+        this.$message.error('网络错误，请刷新或稍后再试')
+      })
     }
   },
   data () {
@@ -311,6 +365,8 @@ export default {
       name: this.$cookies.get('email'),
       userId: this.$cookies.get('userId'),
       isProfile: true,
+      classScoresVisible: false,
+      homeworkScoresVisible: false,
       newPostDialogVisible: false,
       newReplyDialogVisible: false,
       activeHomeworkId: '',
@@ -337,8 +393,9 @@ export default {
         grade: 1,
         term: 1,
         classOrder: 1,
-        startTime: '2019-03-1',
-        endTime: '2019-06-30',
+        startTime: [2019, 3, 1],
+        endTime: [2019, 6, 30],
+        publishMethod: 'NOT_YET',
         coursewares: [{id: 1, name: '课件1'}, {id: 2, name: '课件2'}],
         homework: [{
           id: 1,
@@ -347,6 +404,7 @@ export default {
           deadline: '2019-03-9',
           submissionId: 1,
           sizeLimit: 2,
+          publishMethod: 'NOT_YET',
           typeRestriction: ['doc', 'docx']
         }, {
           id: 2,
@@ -355,6 +413,7 @@ export default {
           deadline: '2019-03-10',
           submissionId: 0,
           sizeLimit: 2,
+          publishMethod: 'ONLY_FOR_ME',
           typeRestriction: ['doc', 'docx']
         }],
         posts: [{
@@ -377,6 +436,19 @@ export default {
           time: '2019-03-10',
           replies: [{id: 1, replies: '回帖者1', text: '正文', time: '2019-03-10'}]
         }]
+      },
+      homeworkScore: {
+        id: 0,
+        publishMethod: '',
+        homeworkScores: [{submissionId: 1, studentId: '161250042', score: 100.0},
+          {submissionId: 2, studentId: '161250040', score: 60.0},
+          {submissionId: 0, studentId: '161250039', score: 0.0}]
+      },
+      classScore: {
+        publishMethod: '',
+        scores: [{studentId: 1, strId: '161250042', score: 100.0},
+          {studentId: 2, strId: '161250040', score: 60.0},
+          {studentId: 3, strId: '161250039', score: 0.0}]
       }
     }
   }

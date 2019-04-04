@@ -6,7 +6,7 @@
     <el-main>
       <el-row>
         <el-col>
-          <el-card class="box-card" style="width: 25%">
+          <el-card class="box-card">
             <div slot="header" class="text">账户信息
               <el-button v-if="!isEditing" style="float: right; padding: 3px 0" type="text" icon="el-icon-edit"
                          @click="editUser">编辑</el-button>
@@ -208,9 +208,7 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        this.$http.post('/MyCourses/deleteAccount', {
-          userId: this.$cookies.get('userId')
-        }).then((res) => {
+        this.$http.post('/MyCourses/deleteAccount', this.$cookies.get('userId')).then((res) => {
           if (res.data === 'SUCCESS') {
             this.$message.success('成功永久注销你的账号!')
             /* 退出登录 */
@@ -281,7 +279,7 @@ export default {
 
 <style scoped>
   .box-card {
-    width: 31%;
+    width: 47%;
     margin: 15px 15px;
     float: left;
   }

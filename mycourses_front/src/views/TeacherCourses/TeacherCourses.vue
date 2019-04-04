@@ -156,19 +156,22 @@
             <el-button @click="clickEditScores()">编辑成绩</el-button>
             <!--弹窗：编辑成绩-->
             <el-dialog title="编辑成绩" :visible.sync="editScoresVisible" style="text-align: center" center>
-              <el-table :data="editClassScore.scores" max-height="450px" :default-sort="{prop: 'studentId', order: 'ascending'}" stripe>
-                <el-table-column property="studentId" label="学号" sortable></el-table-column>
+              <el-table :data="editClassScore.scores" max-height="450px" :default-sort="{prop: 'strId', order: 'ascending'}" stripe>
+                <el-table-column property="strId" label="学号" sortable></el-table-column>
                 <el-table-column property="score" label="成绩" sortable></el-table-column>
               </el-table>
-              <el-radio-group v-model="editClassScore.publishMethod">
-                <el-radio :label="'FULLY_OPEN'">完全公开</el-radio>
-                <el-radio :label="'ONLY_FOR_ME'">仅可查看本人</el-radio>
-              </el-radio-group>
+              <div style="margin-top: 15px">公开方式：
+                <el-radio-group v-model="editClassScore.publishMethod">
+                  <el-radio :label="'FULLY_OPEN'">完全公开</el-radio>
+                  <el-radio :label="'ONLY_FOR_ME'">仅可查看本人</el-radio>
+                </el-radio-group>
+              </div>
               <el-upload :auto-upload="false" ref="classExcel" action="http://jsonplaceholder.typicode.com/posts"
                          :on-change="clickUploadExcel" :show-file-list="false" accept=".xls,.xlsx" :limit="1"
                          style="margin-top: 16px; margin-left: 35%; float: left;">
                 <el-button slot="trigger">导入Excel</el-button>
               </el-upload>
+              <el-button style="margin-top: 16px; margin-left: 16px" @click="editScoresVisible = false">取消</el-button>
               <el-button style="margin-top: 16px; margin-left: 16px" type="primary" @click="clickUpdateScores()">发布成绩</el-button>
             </el-dialog>
           </el-col>
@@ -186,7 +189,7 @@
                     <i v-if="homework.publishMethod === 'ONLY_FOR_ME'">（仅可查看本人）</i>
                     <i v-else-if="homework.publishMethod === 'FULLY_OPEN'">（完全公开）</i>
                   </div>
-                  <el-button style="margin-top: 16px" @click="clickEditHwScores(homework.id, homework.publishMethod)">编辑作业成绩</el-button>
+                  <el-button style="margin-top: 16px" @click="clickEditHwScores(homework.id, homework.publishMethod)">作业成绩</el-button>
                   <el-button style="margin-top: 16px" @click="clickDownloadSubmissions(homework.id)">下载学生作业</el-button>
                 </el-collapse-item>
               </el-collapse>
@@ -200,15 +203,18 @@
             <el-table-column property="studentId" label="学号" sortable></el-table-column>
             <el-table-column property="score" label="成绩" sortable></el-table-column>
           </el-table>
-          <el-radio-group v-model="editHomework.publishMethod">
-            <el-radio :label="'FULLY_OPEN'">完全公开</el-radio>
-            <el-radio :label="'ONLY_FOR_ME'">仅可查看本人</el-radio>
-          </el-radio-group>
+          <div style="margin-top: 15px">公开方式：
+            <el-radio-group v-model="editHomework.publishMethod">
+              <el-radio :label="'FULLY_OPEN'">完全公开</el-radio>
+              <el-radio :label="'ONLY_FOR_ME'">仅可查看本人</el-radio>
+            </el-radio-group>
+          </div>
           <el-upload :auto-upload="false" ref="homeworkExcel" action="http://jsonplaceholder.typicode.com/posts"
                      :on-change="clickUploadHwExcel" :show-file-list="false" accept=".xls,.xlsx" :limit="1"
                      style="margin-top: 16px; margin-left: 35%; float: left;">
             <el-button slot="trigger">导入Excel</el-button>
           </el-upload>
+          <el-button style="margin-top: 16px; margin-left: 16px" @click="editHwScoresVisible = false">取消</el-button>
           <el-button style="margin-top: 16px; margin-left: 16px" type="primary" @click="clickUpdateHwScores(editHomework.id)">发布成绩</el-button>
         </el-dialog>
         <!--弹窗：发布新作业-->
@@ -246,22 +252,22 @@
 export default {
   name: 'TeacherCourses',
   mounted () {
-    // if (this.$cookies.isKey('userId')) {
-    /* HTTP请求 */
-    this.$http.get('/MyCourses/TeacherCourses', {'params': {'teacherId': this.$cookies.get('userId')}
-    }).then((res) => {
-      if (res.data.result === 'SUCCESS') {
-        this.teacherCourses = res.data.teacherCourses
-      } else {
+    if (this.$cookies.isKey('userId')) {
+      /* HTTP请求 */
+      this.$http.get('/MyCourses/TeacherCourses', {'params': {'teacherId': this.$cookies.get('userId')}
+      }).then((res) => {
+        if (res.data.result === 'SUCCESS') {
+          this.teacherCourses = res.data.teacherCourses
+        } else {
+          this.$message.error('网络错误，请刷新或稍后再试')
+        }
+      }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
-      }
-    }, () => {
-      this.$message.error('网络错误，请刷新或稍后再试')
-    })
-    // } else {
-    //   /* 如果cookie不存在，则跳转到登录页 */
-    //   this.$router.push('/login')
-    // }
+      })
+    } else {
+      /* 如果cookie不存在，则跳转到登录页 */
+      this.$router.push('/login')
+    }
   },
   methods: {
     pre2 (num) {
@@ -289,7 +295,7 @@ export default {
       this.isProfile = true
     },
     clickEditScores () {
-      this.$http.get('/MyCourses/getClassScores', {'params': {classId: this.classInfo.id}}).then(res => {
+      this.$http.get('/MyCourses/getClassScores', {'params': {userId: this.userId, classId: this.classInfo.id}}).then(res => {
         if (res.data.result === 'SUCCESS') {
           this.editClassScore.scores = res.data.scores
           this.editClassScore.publishMethod = this.classInfo.publishMethod
@@ -323,7 +329,7 @@ export default {
           console.log('json:', table)
           for (let i = 0; i < table.length; i += 1) {
             for (let j = 0; j < this.editClassScore.scores.length; j += 1) {
-              if (table[i]['学号'] === Number(this.editClassScore.scores[j].studentId)) {
+              if (table[i]['学号'] === Number(this.editClassScore.scores[j].strId)) {
                 this.editClassScore.scores[j].score = table[i]['成绩']
                 break
               }
@@ -345,13 +351,13 @@ export default {
         publishMethod: this.editClassScore.publishMethod
       }).then((res) => {
         console.log(res.data)
-        if (res.data.result === 'SUCCESS') {
+        if (res.data === 'SUCCESS') {
           this.classInfo.publishMethod = this.editClassScore.publishMethod
           this.editScoresVisible = false
           this.$message.success('发布班次成绩成功！')
         } else {
           this.$message.error('网络错误，请刷新或稍后再试')
-          console.log('未知错误：' + res.data.result)
+          console.log('未知错误：' + res.data)
         }
       }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
@@ -562,7 +568,7 @@ export default {
       })
     },
     clickEditHwScores (homeworkId, publishMethod) {
-      this.$http.get('/MyCourses/getHomeworkScores', {'params': {homeworkId: homeworkId}}).then(res => {
+      this.$http.get('/MyCourses/getHomeworkScores', {'params': {userId: this.userId, homeworkId: homeworkId}}).then(res => {
         if (res.data.result === 'SUCCESS') {
           this.editHomework.id = homeworkId
           this.editHomework.publishMethod = publishMethod
@@ -596,9 +602,9 @@ export default {
           const table = this.$XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]) // 生成json表格内容
           console.log('json:', table)
           for (let i = 0; i < table.length; i += 1) {
-            for (let j = 0; j < this.homeworkScores.length; j += 1) {
-              if (table[i]['学号'] === Number(this.homeworkScores[j].studentId)) {
-                this.homeworkScores[j].score = table[i]['成绩']
+            for (let j = 0; j < this.editHomework.homeworkScores.length; j += 1) {
+              if (table[i]['学号'] === Number(this.editHomework.homeworkScores[j].studentId)) {
+                this.editHomework.homeworkScores[j].score = table[i]['成绩']
                 break
               }
             }
@@ -629,7 +635,7 @@ export default {
           this.$message.success('发布作业成绩成功！')
         } else {
           this.$message.error('网络错误，请刷新或稍后再试')
-          console.log('未知错误：' + res.data.result)
+          console.log('未知错误：' + res.data)
         }
       }, () => {
         this.$message.error('网络错误，请刷新或稍后再试')
@@ -661,7 +667,7 @@ export default {
     return {
       name: this.$cookies.get('email'),
       userId: this.$cookies.get('userId'),
-      isProfile: false,
+      isProfile: true,
       editScoresVisible: false,
       editHwScoresVisible: false,
       newPostDialogVisible: false,

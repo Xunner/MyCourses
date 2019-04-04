@@ -14,8 +14,8 @@
               <el-table-column prop="grade" label="年级" sortable></el-table-column>
               <el-table-column prop="term" label="学期" sortable></el-table-column>
               <el-table-column prop="classOrder" label="班级" sortable></el-table-column>
-              <el-table-column prop="startTime" label="开课时间" :formatter="dateFormatter" sortable></el-table-column>
-              <el-table-column prop="endTime" label="结课时间" :formatter="dateFormatter" sortable></el-table-column>
+              <el-table-column prop="startTime" label="开课时间" :formatter="startDateFormatter" sortable></el-table-column>
+              <el-table-column prop="endTime" label="结课时间" :formatter="endDateFormatter" sortable></el-table-column>
               <el-table-column prop="number" label="已选/限额" :formatter="numberFormatter" sortable></el-table-column>
               <el-table-column label="操作">
                 <template slot-scope="scope">
@@ -36,8 +36,8 @@
               <el-table-column prop="grade" label="年级" sortable></el-table-column>
               <el-table-column prop="term" label="学期" sortable></el-table-column>
               <el-table-column prop="classOrder" label="班级" sortable></el-table-column>
-              <el-table-column prop="startTime" label="开课时间" :formatter="dateFormatter" sortable></el-table-column>
-              <el-table-column prop="endTime" label="结课时间" :formatter="dateFormatter" sortable></el-table-column>
+              <el-table-column prop="startTime" label="开课时间" :formatter="startDateFormatter" sortable></el-table-column>
+              <el-table-column prop="endTime" label="结课时间" :formatter="endDateFormatter" sortable></el-table-column>
               <el-table-column prop="number" label="已选/限额" :formatter="numberFormatter" sortable></el-table-column>
               <el-table-column label="操作">
                 <template slot-scope="scope">
@@ -130,8 +130,11 @@ export default {
     numberFormatter (row) {
       return row.number.current + ' / ' + row.number.max
     },
-    dateFormatter (row) {
+    startDateFormatter (row) {
       return row.startTime.slice(0, 3).join('-')
+    },
+    endDateFormatter (row) {
+      return row.endTime.slice(0, 3).join('-')
     }
   },
   data () {

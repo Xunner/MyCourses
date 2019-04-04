@@ -183,9 +183,7 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        this.$http.post('/MyCourses/deleteAccount', {
-          userId: this.$cookies.get('userId')
-        }).then((res) => {
+        this.$http.post('/MyCourses/deleteAccount', this.$cookies.get('userId')).then((res) => {
           if (res.data === 'SUCCESS') {
             this.$message.success('成功永久注销你的账号!')
             /* 退出登录 */
