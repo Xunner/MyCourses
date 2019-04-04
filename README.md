@@ -2,7 +2,7 @@
 
 ### ER图与数据库表（表名，各列名及数据类型，外键关系）：
 
-![database diagram](/img/database diagram.png)
+![database diagram](/img/database_diagram.png)
 
 ### 说明：
 
